@@ -1,4 +1,4 @@
-# Some plugins for react app
+# Some vite plugins for react app
 
 - vite-plugin-conventional-routes
 - vite-plugin-conventional-entries

@@ -19,8 +19,7 @@
   "homepage": "https://github.com/Codpoe/vite-plugins-for-react#readme",
   "author": "Codpoe <codpoe.me@gmail.com> (https://github.com/codpoe)",
   "scripts": {
-    "dev": "tsc -w",
-    "build": "tsc"
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": "eslint --fix"
