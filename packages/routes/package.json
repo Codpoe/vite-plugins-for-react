@@ -1,0 +1,43 @@
+{
+  "name": "vite-plugin-conventional-routes",
+  "version": "0.1.0",
+  "description": "vite plugin to generate conventional routes",
+  "keywords": [
+    "vite",
+    "vite plugin",
+    "conventional routes"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Codpoe/vite-plugins-for-react.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Codpoe/vite-plugins-for-react/issues"
+  },
+  "homepage": "https://github.com/Codpoe/vite-plugins-for-react#readme",
+  "author": "Codpoe <codpoe.me@gmail.com> (https://github.com/codpoe)",
+  "files": [
+    "dist",
+    "shim.d.ts"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "@types/micromatch": "^4.0.2"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "fast-glob": "^3.2.11",
+    "fs-extra": "^10.1.0",
+    "gray-matter": "^4.0.3",
+    "jest-docblock": "^28.0.2",
+    "micromatch": "^4.0.5",
+    "upath": "^2.0.1"
+  }
+}
