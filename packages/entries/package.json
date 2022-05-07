@@ -20,13 +20,13 @@
   "author": "Codpoe <codpoe.me@gmail.com> (https://github.com/codpoe)",
   "files": [
     "dist",
-    "shim.d.ts"
+    "default.html"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsc -w",
-    "build": "tsc"
+    "build": "rimraf dist && tsc"
   },
   "devDependencies": {
     "@types/connect-history-api-fallback": "^1.3.5",

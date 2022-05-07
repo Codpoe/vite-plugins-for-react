@@ -25,7 +25,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsc -w",
-    "build": "tsc"
+    "build": "rimraf dist && tsc"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
