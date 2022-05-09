@@ -285,6 +285,7 @@ export class PagesService extends EventEmitter {
         path: page.routePath,
         component: page.filePath, // TODO: relative to vite root?
         children: page.isLayout ? [] : undefined,
+        meta: page.meta,
       };
 
       // run hook: onCreateRoute
