@@ -68,7 +68,7 @@ function getHtml(entry: Entry, type: InjectHtmlType): string | null {
   return null;
 }
 
-function incrementIndent(content: string, indent: string = ''): string {
+function incrementIndent(content: string, indent = ''): string {
   indent = `${indent}${indent[0] === '\t' ? '\t' : '  '}`;
 
   return content

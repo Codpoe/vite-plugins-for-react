@@ -12,7 +12,7 @@ import history, { Rewrite } from 'connect-history-api-fallback';
 import { Entry, UserConfig } from './types';
 import { normalizeRoutePath } from './utils';
 import { DEFAULT_HTML_PATH, MIDDLE_ENTRY_MODULE_ID } from './constants';
-import { htmlMiddleware, transformHtml } from './html';
+import { transformHtml } from './html';
 
 function resolveEntries(
   root: string,
@@ -90,14 +90,9 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
 
 function resolveRewrites(root: string, entries: Entry[]): Rewrite[] {
   return entries.map<Rewrite>(entry => {
-    const entryHtmlPath = path.resolve(
-      path.dirname(entry.entryPath),
-      'index.html'
-    );
-
     return {
       from: new RegExp(`^${entry.routePath}.*`),
-      to({ parsedUrl }) {
+      to() {
         // priority use of index.html in the entry
         if (fs.existsSync(entry.htmlPath)) {
           return normalizeRoutePath(path.relative(root, entry.htmlPath));
@@ -226,13 +221,12 @@ if (rootEl) {
     {
       name: 'vite-plugin-conventional-entries:transform-html-path',
       enforce: 'post',
-      generateBundle(_options, bundle, isWrite) {
+      generateBundle(_options, bundle) {
         Object.values(bundle).forEach(chunkOrAsset => {
           if (
             chunkOrAsset.type === 'asset' &&
             chunkOrAsset.fileName.endsWith('.html')
           ) {
-            console.log(chunkOrAsset);
             chunkOrAsset.fileName = chunkOrAsset.fileName.replace(
               'node_modules/.conventional-entries/',
               'html/'
