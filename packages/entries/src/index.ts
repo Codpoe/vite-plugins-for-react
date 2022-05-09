@@ -193,9 +193,8 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
       },
       async load(id) {
         if (id.startsWith(MIDDLE_ENTRY_MODULE_ID)) {
-          const routePath = normalizeRoutePath(
-            id.replace(MIDDLE_ENTRY_MODULE_ID, '')
-          );
+          const query = new URLSearchParams(id.split('?')[1]);
+          const routePath = normalizeRoutePath(query.get('routePath') || '/');
           const entry = entries.find(entry => entry.routePath === routePath);
 
           if (!entry) {
@@ -214,7 +213,7 @@ if (rootEl) {
   console.error('[conventional-entries] Cannot find element whose id is "root"');
 }
 `;
-          return await transformWithEsbuild(code, id, { loader: 'jsx' });
+          return code;
         }
       },
     },

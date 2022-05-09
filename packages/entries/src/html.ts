@@ -136,7 +136,7 @@ function injectEntryScript(html: string, entry: Entry): string {
     fs.readFileSync(entry.entryPath, 'utf-8')
   );
   const src = hasDefaultExport
-    ? `${MIDDLE_ENTRY_MODULE_ID}${entry.routePath}`
+    ? `${MIDDLE_ENTRY_MODULE_ID}?routePath=${entry.routePath}`
     : entry.serverPath;
 
   return injectHtml(
