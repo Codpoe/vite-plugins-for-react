@@ -2,6 +2,7 @@ import path from 'upath';
 import fs from 'fs-extra';
 import { camelCase, uniq } from 'lodash';
 import { Connect, normalizePath, send, ViteDevServer } from 'vite';
+import history, { Rewrite } from 'connect-history-api-fallback';
 import { Entry } from './types';
 import {
   BODY_INJECT_RE,
@@ -11,7 +12,51 @@ import {
   HEAD_PREPEND_INJECT_RE,
   MIDDLE_ENTRY_MODULE_ID,
 } from './constants';
-import { cleanUrl } from './utils';
+import { cleanUrl, normalizeRoutePath } from './utils';
+
+function resolveRewrites(root: string, entries: Entry[]): Rewrite[] {
+  return entries.map<Rewrite>(entry => {
+    return {
+      from: new RegExp(`^${entry.routePath}.*`),
+      to() {
+        // priority use of index.html in the entry
+        if (fs.existsSync(entry.htmlPath)) {
+          return normalizeRoutePath(path.relative(root, entry.htmlPath));
+        }
+        return `/index.html`;
+      },
+    };
+  });
+}
+
+export function spaFallbackMiddleware(
+  root: string,
+  entries: Entry[]
+): Connect.NextHandleFunction {
+  // setup rewrites so that each route can correctly find the corresponding html file
+  const rewrites = resolveRewrites(root, entries);
+
+  const historyMiddleware = history({
+    // logger: console.log.bind(console),
+    htmlAcceptHeaders: ['text/html', 'application/xhtml+xml'],
+    rewrites,
+  }) as Connect.NextHandleFunction;
+
+  return function viteSpaFallbackMiddleware(req, res, next) {
+    if (!req.url) {
+      return next();
+    }
+
+    const ext = path.extname(cleanUrl(req.url));
+
+    // Do not rewrite paths with non-html ext
+    if (ext && ext !== '.html') {
+      return next();
+    }
+
+    return historyMiddleware(req, res, next);
+  };
+}
 
 /**
  * Based on vite html middleware, support default html

@@ -1,18 +1,12 @@
-import {
-  BuildOptions,
-  ResolvedConfig,
-  transformWithEsbuild,
-  PluginOption,
-} from 'vite';
+import { BuildOptions, ResolvedConfig, PluginOption } from 'vite';
 import path from 'upath';
 import fs from 'fs-extra';
 import fg from 'fast-glob';
 import mm from 'micromatch';
-import history, { Rewrite } from 'connect-history-api-fallback';
 import { Entry, UserConfig } from './types';
 import { normalizeRoutePath } from './utils';
 import { DEFAULT_HTML_PATH, MIDDLE_ENTRY_MODULE_ID } from './constants';
-import { transformHtml } from './html';
+import { spaFallbackMiddleware, transformHtml } from './html';
 
 function resolveEntries(
   root: string,
@@ -88,21 +82,6 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
   }
 }
 
-function resolveRewrites(root: string, entries: Entry[]): Rewrite[] {
-  return entries.map<Rewrite>(entry => {
-    return {
-      from: new RegExp(`^${entry.routePath}.*`),
-      to() {
-        // priority use of index.html in the entry
-        if (fs.existsSync(entry.htmlPath)) {
-          return normalizeRoutePath(path.relative(root, entry.htmlPath));
-        }
-        return `/index.html`;
-      },
-    };
-  });
-}
-
 export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
   const { pattern = '**/main.{js,jsx,ts,tsx}' } = userConfig;
 
@@ -161,16 +140,7 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
           .on('change', listener)
           .on('unlink', listener);
 
-        // setup rewrites so that each route can correctly find the corresponding html file
-        const rewrites = resolveRewrites(viteConfig.root, entries);
-
-        server.middlewares.use(
-          history({
-            // logger: console.log.bind(console),
-            htmlAcceptHeaders: ['text/html', 'application/xhtml+xml'],
-            rewrites,
-          }) as any
-        );
+        server.middlewares.use(spaFallbackMiddleware(viteConfig.root, entries));
 
         // return () => {
         //   server.middlewares.use(htmlMiddleware(server));
