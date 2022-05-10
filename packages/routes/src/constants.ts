@@ -9,6 +9,9 @@ export const DEFAULT_IGNORE = [
   '**/apis/**',
   '**/styles/**',
   '**/assets/**',
+  '**/models/**',
+  '**/stores/**',
+  '**/states/**',
   // types
   '**/types/**',
   '**/*.d.ts',
