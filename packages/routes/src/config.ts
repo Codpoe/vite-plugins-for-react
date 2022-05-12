@@ -6,6 +6,7 @@ import {
   UserConfig,
   PagesConfigWithType,
   UserPages,
+  PagesConfigItem,
 } from './types';
 import { normalizeRoutePath } from './utils';
 import { DEFAULT_IGNORE, PAGE_EXTS } from './constants';
@@ -21,7 +22,7 @@ function autoDetectPages(src: string, root: string): UserPages | undefined {
 
   const pages = fs
     .readdirSync(src)
-    .map<UserPages | null>(fileName => {
+    .map<PagesConfigItem | null>(fileName => {
       const entryDir = path.resolve(src, fileName);
       const pagesDir = path.resolve(entryDir, 'pages');
 
@@ -34,7 +35,7 @@ function autoDetectPages(src: string, root: string): UserPages | undefined {
 
       return null;
     })
-    .filter((x): x is string => Boolean(x));
+    .filter((x): x is PagesConfigItem => Boolean(x));
 
   if (pages.length) {
     return pages;

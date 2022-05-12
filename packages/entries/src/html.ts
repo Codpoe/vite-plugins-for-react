@@ -43,7 +43,8 @@ export function spaFallbackMiddleware(
   }) as Connect.NextHandleFunction;
 
   return function viteSpaFallbackMiddleware(req, res, next) {
-    if (!req.url) {
+    // The path of virtual module usually starts with @, we shouldn't rewrite it
+    if (!req.url || req.url.startsWith('/@')) {
       return next();
     }
 
