@@ -7,21 +7,27 @@ import { Entry } from './types';
 import {
   BODY_INJECT_RE,
   BODY_PREPEND_INJECT_RE,
+  DEFAULT_ENTRY_MODULE_ID,
   DEFAULT_HTML_PATH,
   HEAD_INJECT_RE,
   HEAD_PREPEND_INJECT_RE,
-  MIDDLE_ENTRY_MODULE_ID,
 } from './constants';
 import { cleanUrl, normalizeRoutePath } from './utils';
 
-function resolveRewrites(root: string, entries: Entry[]): Rewrite[] {
+function resolveRewrites(
+  root: string,
+  base: string,
+  entries: Entry[]
+): Rewrite[] {
   return entries.map<Rewrite>(entry => {
     return {
       from: new RegExp(`^${entry.routePath}.*`),
       to() {
         // priority use of index.html in the entry
         if (fs.existsSync(entry.htmlPath)) {
-          return normalizeRoutePath(path.relative(root, entry.htmlPath));
+          return normalizeRoutePath(
+            base + '/' + path.relative(root, entry.htmlPath)
+          );
         }
         return `/index.html`;
       },
@@ -31,10 +37,11 @@ function resolveRewrites(root: string, entries: Entry[]): Rewrite[] {
 
 export function spaFallbackMiddleware(
   root: string,
+  base: string,
   entries: Entry[]
 ): Connect.NextHandleFunction {
   // setup rewrites so that each route can correctly find the corresponding html file
-  const rewrites = resolveRewrites(root, entries);
+  const rewrites = resolveRewrites(root, base, entries);
 
   const historyMiddleware = history({
     // logger: console.log.bind(console),
@@ -172,23 +179,34 @@ function injectHtml(
   return html;
 }
 
+/**
+ * Find entry.client.{js,jsx,ts,tsx}, fallback to DEFAULT_ENTRY_MODULE_ID
+ */
+function getEntryClientPath(entry: Entry): string {
+  for (const ext of ['.js', '.jsx', '.ts', '.tsx']) {
+    const entryClientPath = path.resolve(
+      path.dirname(entry.entryPath),
+      `entry.client${ext}`
+    );
+
+    if (fs.existsSync(entryClientPath)) {
+      return entryClientPath;
+    }
+  }
+
+  return `${DEFAULT_ENTRY_MODULE_ID}?routePath=${entry.routePath}`;
+}
+
 function injectEntryScript(html: string, entry: Entry): string {
   // if html already has entry script，return directly to avoid repeated injection
   if (new RegExp(`src=['"]${entry.serverPath}['"]`).test(html)) {
     return html;
   }
 
-  const hasDefaultExport = /(^|\n)export default/.test(
-    fs.readFileSync(entry.entryPath, 'utf-8')
-  );
-  const src = hasDefaultExport
-    ? `${MIDDLE_ENTRY_MODULE_ID}?routePath=${entry.routePath}`
-    : entry.serverPath;
-
   return injectHtml(
     html,
     'body',
-    `<script type="module" src="${src}"></script>`
+    `<script type="module" src="${getEntryClientPath(entry)}"></script>`
   );
 }
 

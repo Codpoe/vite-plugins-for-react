@@ -16,6 +16,11 @@ export interface UserConfig {
    * @default '**\/main.{js,jsx,ts,tsx}'
    */
   pattern?: string | string[];
+  /**
+   * base route path
+   * @default '/'
+   */
+  basePath?: string;
 }
 
 export interface ResolvedConfig extends Required<UserConfig> {}

@@ -5,13 +5,14 @@ import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig } from './types';
 import { normalizeRoutePath } from './utils';
-import { DEFAULT_HTML_PATH, MIDDLE_ENTRY_MODULE_ID } from './constants';
+import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
 import { spaFallbackMiddleware, transformHtml } from './html';
 
 function resolveEntries(
   root: string,
   src: string,
-  pattern: string | string[]
+  pattern: string | string[],
+  basePath: string
 ): Entry[] {
   const nodeModulesDir = path.resolve(root, 'node_modules');
   const outputDir = path.resolve(nodeModulesDir, '.conventional-entries');
@@ -28,14 +29,19 @@ function resolveEntries(
     .sort((a, b) => b.length - a.length)
     .map<Entry>(entryPath => {
       const routePath = normalizeRoutePath(
-        path.relative(src, path.dirname(entryPath))
+        basePath + '/' + path.relative(src, path.dirname(entryPath))
       );
       const serverPath = normalizeRoutePath(path.relative(root, entryPath));
       // will create symlink for html path later
       const htmlPath = path.resolve(
         outputDir,
         // flat route path, eg. /a/b/c -> a~b~c.html
-        `${routePath.replace(/^\//, '').replace('/', '~') || 'index'}.html`
+        `${
+          routePath
+            .replace(basePath, '')
+            .replace(/^\//, '')
+            .replace('/', '~') || 'index'
+        }.html`
       );
 
       return {
@@ -83,7 +89,7 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
 }
 
 export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
-  const { pattern = '**/main.{js,jsx,ts,tsx}' } = userConfig;
+  const { pattern = '**/main.{js,jsx,ts,tsx}', basePath = '/' } = userConfig;
 
   let viteConfig: ResolvedConfig;
   let src: string;
@@ -97,7 +103,7 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
         const root = config.root || process.cwd();
 
         src = path.resolve(root, userConfig?.src || 'src');
-        entries = resolveEntries(root, src, pattern);
+        entries = resolveEntries(root, src, pattern, basePath);
 
         const input = resolveInput(root, entries);
 
@@ -140,7 +146,9 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
           .on('change', listener)
           .on('unlink', listener);
 
-        server.middlewares.use(spaFallbackMiddleware(viteConfig.root, entries));
+        server.middlewares.use(
+          spaFallbackMiddleware(viteConfig.root, viteConfig.base, entries)
+        );
 
         // return () => {
         //   server.middlewares.use(htmlMiddleware(server));
@@ -157,12 +165,12 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
         },
       },
       resolveId(source) {
-        if (source.startsWith(MIDDLE_ENTRY_MODULE_ID)) {
+        if (source.startsWith(DEFAULT_ENTRY_MODULE_ID)) {
           return source;
         }
       },
       async load(id) {
-        if (id.startsWith(MIDDLE_ENTRY_MODULE_ID)) {
+        if (id.startsWith(DEFAULT_ENTRY_MODULE_ID)) {
           const query = new URLSearchParams(id.split('?')[1]);
           const routePath = normalizeRoutePath(query.get('routePath') || '/');
           const entry = entries.find(entry => entry.routePath === routePath);
@@ -198,7 +206,7 @@ if (rootEl) {
           ) {
             chunkOrAsset.fileName = chunkOrAsset.fileName.replace(
               'node_modules/.conventional-entries/',
-              'html/'
+              ''
             );
           }
         });
