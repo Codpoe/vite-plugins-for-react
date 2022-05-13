@@ -1,17 +1,18 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import routes from 'virtual:conventional-routes/b';
 import './main.css';
 
-function App() {
+function RoutesRenderer() {
   return useRoutes(routes);
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+export default function App() {
+  return (
+    <React.StrictMode>
+      <BrowserRouter basename="/base">
+        <RoutesRenderer />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}

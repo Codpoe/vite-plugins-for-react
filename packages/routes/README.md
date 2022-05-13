@@ -8,8 +8,9 @@
 
 ## 使用
 
-在 vite.config.ts 中配置插件：
+### 配置插件
 
+在 vite.config.ts 中配置插件：
 ```ts
 // vite.config.ts
 
@@ -23,7 +24,10 @@ export default defineConfig({
 });
 ```
 
-默认情况下，插件会扫描 `src/pages` 下的 `js,jsx,ts,tsx,md,mdx` 文件用于生成页面路由。你可以在应用中通过导入模块 `virtual:conventional-routes` 来获取生成的路由配置：
+默认情况下，插件会扫描 `src/pages` 下的 `js,jsx,ts,tsx,md,mdx` 文件用于生成页面路由。
+
+### 获取路由配置
+可以在应用中通过导入模块 `virtual:conventional-routes` 来获取生成的路由配置：
 
 ```tsx
 // app.tsx
@@ -60,6 +64,18 @@ function App() {
 | `src/pages/user.tsx` |	`/user` |
 
 另外，为了能更方便地组织项目代码，插件在扫描页面文件时默认会忽略一些比较特殊的目录和文件，默认的忽略逻辑见[配置-ignore](#ignore)
+
+### 类型提示
+
+为了在导入模块 `virtual:conventional-routes` 时有更好的 TS 类型提示，可以在 `tsconfig.json` 中加上对应的类型文件：
+```json
+{
+  "compilerOptions": {
+    // ...
+    "types": ["vite-plugin-conventional-routes/shim"]
+  }
+}
+```
 
 ## 配置
 
