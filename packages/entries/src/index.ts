@@ -17,7 +17,7 @@ function resolveEntries(
   const nodeModulesDir = path.resolve(root, 'node_modules');
   const outputDir = path.resolve(nodeModulesDir, '.conventional-entries');
 
-  if (!fs.existsSync(path.resolve(root, 'node_modules'))) {
+  if (!fs.existsSync(nodeModulesDir)) {
     throw new Error('node_modules directory is not found');
   }
 
@@ -35,13 +35,7 @@ function resolveEntries(
       // will create symlink for html path later
       const htmlPath = path.resolve(
         outputDir,
-        // flat route path, eg. /a/b/c -> a~b~c.html
-        `${
-          routePath
-            .replace(basePath, '')
-            .replace(/^\//, '')
-            .replace('/', '~') || 'index'
-        }.html`
+        `${routePath.replace(basePath, '').replace(/^\//, '') || 'index'}.html`
       );
 
       return {
@@ -63,14 +57,25 @@ function resolveInput(
   fs.ensureDirSync(outputDir);
   fs.emptyDirSync(outputDir);
 
-  return entries.reduce<Record<string, string>>((res, entry) => {
-    const key = path.basename(entry.htmlPath, path.extname(entry.htmlPath));
-
+  /**
+   * SPA:
+   * {
+   *   'index': 'node_modules/.conventional-entries/index.html',
+   * }
+   *
+   * MPA:
+   * {
+   *   'a': 'node_modules/.conventional-entries/a.html',
+   *   'b/c': 'node_modules/.conventional-entries/b/c.html'
+   * }
+   */
+  const input = entries.reduce<Record<string, string>>((res, entry) => {
     ensureLinkHtmlPath(root, entry);
-    res[key] = entry.htmlPath;
-
+    res[entry.routePath.replace(/^\//, '') || 'index'] = entry.htmlPath;
     return res;
   }, {});
+
+  return input;
 }
 
 function ensureLinkHtmlPath(root: string, entry: Entry) {
@@ -195,6 +200,9 @@ if (rootEl) {
         }
       },
     },
+    // vite will emit html with fileName which is relative(root, id),
+    // for example: 'dist/node_modules/.conventional-entries/index.html'.
+    // In order to have a clearer directory structure, we should rewrite html fileName here.
     {
       name: 'vite-plugin-conventional-entries:transform-html-path',
       enforce: 'post',
