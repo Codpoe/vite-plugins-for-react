@@ -169,6 +169,7 @@ export class PagesService extends EventEmitter {
 
     const pagesConfigItem = this.config.pages.config.find(
       ({ dir, pattern, ignore }) =>
+        filePath.startsWith(dir) &&
         mm.isMatch(filePath, pattern, { cwd: dir, ignore })
     );
 
