@@ -60,18 +60,23 @@ function resolveInput(
   /**
    * SPA:
    * {
-   *   'index': 'node_modules/.conventional-entries/index.html',
+   *   'entry~main': 'node_modules/.conventional-entries/index.html',
    * }
    *
    * MPA:
    * {
-   *   'a': 'node_modules/.conventional-entries/a.html',
-   *   'b/c': 'node_modules/.conventional-entries/b/c.html'
+   *   'entry~a': 'node_modules/.conventional-entries/a.html',
+   *   'entry~b~c': 'node_modules/.conventional-entries/b/c.html'
    * }
    */
   const input = entries.reduce<Record<string, string>>((res, entry) => {
     ensureLinkHtmlPath(root, entry);
-    res[entry.routePath.replace(/^\//, '') || 'index'] = entry.htmlPath;
+
+    const inputKey =
+      'entry~' +
+      (entry.routePath.replace(/^\//, '').replace('/', '~') || 'main');
+
+    res[inputKey] = entry.htmlPath;
     return res;
   }, {});
 
@@ -203,6 +208,7 @@ if (rootEl) {
     // vite will emit html with fileName which is relative(root, id),
     // for example: 'dist/node_modules/.conventional-entries/index.html'.
     // In order to have a clearer directory structure, we should rewrite html fileName here.
+    // see also: https://github.com/vitejs/vite/blob/1878f465d26d1c61a29ede72882d54d7e95c1042/packages/vite/src/node/plugins/html.ts#L672
     {
       name: 'vite-plugin-conventional-entries:transform-html-path',
       enforce: 'post',
