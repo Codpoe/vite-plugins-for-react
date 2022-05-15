@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig } from './types';
-import { normalizeRoutePath } from './utils';
+import { normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
 import { spaFallbackMiddleware, transformHtml } from './html';
 
@@ -109,24 +109,28 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
     {
       name: 'vite-plugin-conventional-entries',
       enforce: 'pre',
-      config(config) {
-        const root = config.root || process.cwd();
-
-        src = path.resolve(root, userConfig?.src || 'src');
-        entries = resolveEntries(root, src, pattern, basePath);
-
-        const input = resolveInput(root, entries);
-
-        return {
-          build: {
-            rollupOptions: {
-              input,
-            },
-          },
-        };
-      },
       configResolved(config) {
         viteConfig = config;
+        src = path.resolve(viteConfig.root, userConfig?.src || 'src');
+        entries = resolveEntries(viteConfig.root, src, pattern, basePath);
+
+        const srcFromRoot = path.relative(viteConfig.root, src);
+
+        // Although it is not recommended to modify config in `configResolved`,
+        // I can't find a better way.
+
+        // Since html may dynamically append the page entry after starting the server,
+        // we cannot rely on vite's default optimization strategy.
+        // We need to manually write the entries here,
+        // so that vite can perform dependency crawling and optimization
+        viteConfig.optimizeDeps.entries = ['react', 'react-dom/client'].concat(
+          toArray(pattern).map(p => `${srcFromRoot}/${p}`)
+        );
+
+        viteConfig.build.rollupOptions.input = resolveInput(
+          viteConfig.root,
+          entries
+        );
       },
       configureServer(server) {
         function listener(filePath: string) {
