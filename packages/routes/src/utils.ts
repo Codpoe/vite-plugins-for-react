@@ -37,3 +37,10 @@ export function extractMarkdownTitle(content: string) {
 export function hasDefaultExport(content: string) {
   return /(^|\n)export default/.test(content);
 }
+
+export function toArray<T>(data: T | T[] | undefined): T[] {
+  if (typeof data === 'undefined') {
+    return [];
+  }
+  return Array.isArray(data) ? data : [data];
+}

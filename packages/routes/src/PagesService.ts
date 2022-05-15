@@ -9,6 +9,7 @@ import {
   extractFrontMatter,
   hasDefaultExport,
   normalizeRoutePath,
+  toArray,
 } from './utils';
 import { Page, ResolvedConfig, Route } from './types';
 import { PAGE_EXTS, RESOLVED_ROUTES_MODULE_ID } from './constants';
@@ -76,11 +77,8 @@ export class PagesService extends EventEmitter {
     return (this._startPromise = Promise.all(
       this.config.pages.config.map(
         async ({ basePath, dir, pattern, ignore }) => {
-          pattern = [
-            '**/_layout.{js,jsx,ts,tsx,md,mdx}',
-            ...(Array.isArray(pattern) ? pattern : [pattern]),
-          ];
-          ignore = Array.isArray(ignore) ? ignore : [ignore];
+          pattern = ['**/_layout.{js,jsx,ts,tsx,md,mdx}', ...toArray(pattern)];
+          ignore = toArray(ignore);
 
           const relFilePaths = fg.sync(pattern, { cwd: dir, ignore });
 

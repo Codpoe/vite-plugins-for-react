@@ -4,7 +4,7 @@ import { resolveConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
 import { ResolvedConfig, UserConfig } from './types';
-import { normalizeRoutePath } from './utils';
+import { normalizeRoutePath, toArray } from './utils';
 
 export function conventionalRoutes(userConfig?: UserConfig): Plugin {
   let config: ResolvedConfig;
@@ -62,6 +62,24 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
       config = await resolveConfig(path.normalize(viteConfig.root), userConfig);
       pagesService = new PagesService(config);
       pagesService.start();
+
+      const optimizeEntries = config.pages.config.flatMap(
+        ({ dir, pattern, ignore }) => {
+          const dirFromRoot = path.relative(viteConfig.root, dir);
+          const positive = toArray(pattern).map(p => `${dirFromRoot}/${p}`);
+          // vite's optimizeDeps.entries do not provide ignore configuration,
+          // so we manually convert ignore to negative patterns
+          const negative = toArray(ignore).map(p => `!${dirFromRoot}/${p}`);
+
+          return positive.concat(negative);
+        }
+      );
+
+      // Although it is not recommended to modify config in `configResolved`,
+      // I can't find a better way.
+      viteConfig.optimizeDeps.entries = toArray(
+        viteConfig.optimizeDeps.entries
+      ).concat(optimizeEntries);
     },
     configureServer(server) {
       pagesService.setupServer(server);

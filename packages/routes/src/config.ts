@@ -8,7 +8,7 @@ import {
   UserPages,
   PagesConfigItem,
 } from './types';
-import { normalizeRoutePath } from './utils';
+import { normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_IGNORE, PAGE_EXTS } from './constants';
 
 function autoDetectPages(src: string, root: string): UserPages | undefined {
@@ -69,28 +69,22 @@ function resolvePagesConfig(
     );
   }
 
-  const pagesConfig: PagesConfig = (Array.isArray(pages) ? pages : [pages]).map(
-    item => {
-      if (typeof item === 'string') {
-        item = {
-          dir: item,
-        };
-      }
-
-      const ignore = item.ignore || defaultIgnore;
-
-      return {
-        basePath: normalizeRoutePath(item.basePath || '/'),
-        dir: path.resolve(root, item.dir),
-        pattern: item.pattern || `**/*{${PAGE_EXTS.join(',')}}`,
-        ignore: [
-          '**/node_modules/**',
-          '**/.git/**',
-          ...(Array.isArray(ignore) ? ignore : [ignore]),
-        ],
+  const pagesConfig: PagesConfig = toArray(pages).map(item => {
+    if (typeof item === 'string') {
+      item = {
+        dir: item,
       };
     }
-  );
+
+    const ignore = item.ignore || defaultIgnore;
+
+    return {
+      basePath: normalizeRoutePath(item.basePath || '/'),
+      dir: path.resolve(root, item.dir),
+      pattern: item.pattern || `**/*{${PAGE_EXTS.join(',')}}`,
+      ignore: ['**/node_modules/**', '**/.git/**', ...toArray(ignore)],
+    };
+  });
 
   return {
     type,
