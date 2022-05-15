@@ -1,5 +1,9 @@
 import path from 'upath';
-import { Plugin, transformWithEsbuild } from 'vite';
+import {
+  Plugin,
+  transformWithEsbuild,
+  ResolvedConfig as ResolvedViteConfig,
+} from 'vite';
 import { resolveConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
@@ -7,18 +11,19 @@ import { ResolvedConfig, UserConfig } from './types';
 import { normalizeRoutePath, toArray } from './utils';
 
 export function conventionalRoutes(userConfig?: UserConfig): Plugin {
+  let viteConfig: ResolvedViteConfig;
   let config: ResolvedConfig;
   let pagesService: PagesService;
 
   return {
     name: 'vite-plugin-conventional-routes',
-    config(viteConfig) {
+    config() {
       return {
         build: {
           rollupOptions: {
             output: {
               chunkFileNames(chunkInfo) {
-                const assetsDir = viteConfig.build?.assetsDir || 'assets';
+                const assetsDir = viteConfig.build.assetsDir;
 
                 // By default, "src/pages/a/b/index.js" and "src/pages/c/index.js"
                 // will have the same chunk name: "index", ant it's a little confusing.
@@ -58,7 +63,8 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         },
       };
     },
-    async configResolved(viteConfig) {
+    async configResolved(resolvedViteConfig) {
+      viteConfig = resolvedViteConfig;
       config = await resolveConfig(path.normalize(viteConfig.root), userConfig);
       pagesService = new PagesService(config);
       pagesService.start();
