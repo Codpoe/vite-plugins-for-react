@@ -17,8 +17,31 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
 
   return {
     name: 'vite-plugin-conventional-routes',
-    config() {
+    async config(viteUserConfig) {
+      const root = path.normalize(
+        viteUserConfig.root ? path.resolve(viteUserConfig.root) : process.cwd()
+      );
+
+      config = await resolveConfig(path.normalize(root), userConfig);
+      pagesService = new PagesService(config);
+      pagesService.start();
+
+      const optimizeEntries = config.pages.config.flatMap(
+        ({ dir, pattern, ignore }) => {
+          const dirFromRoot = path.relative(root, dir);
+          const positive = toArray(pattern).map(p => `${dirFromRoot}/${p}`);
+          // vite's optimizeDeps.entries do not provide ignore configuration,
+          // so we manually convert ignore to negative patterns
+          const negative = toArray(ignore).map(p => `!${dirFromRoot}/${p}`);
+
+          return positive.concat(negative);
+        }
+      );
+
       return {
+        optimizeDeps: {
+          entries: optimizeEntries,
+        },
         build: {
           rollupOptions: {
             output: {
@@ -65,27 +88,6 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
     },
     async configResolved(resolvedViteConfig) {
       viteConfig = resolvedViteConfig;
-      config = await resolveConfig(path.normalize(viteConfig.root), userConfig);
-      pagesService = new PagesService(config);
-      pagesService.start();
-
-      const optimizeEntries = config.pages.config.flatMap(
-        ({ dir, pattern, ignore }) => {
-          const dirFromRoot = path.relative(viteConfig.root, dir);
-          const positive = toArray(pattern).map(p => `${dirFromRoot}/${p}`);
-          // vite's optimizeDeps.entries do not provide ignore configuration,
-          // so we manually convert ignore to negative patterns
-          const negative = toArray(ignore).map(p => `!${dirFromRoot}/${p}`);
-
-          return positive.concat(negative);
-        }
-      );
-
-      // Although it is not recommended to modify config in `configResolved`,
-      // I can't find a better way.
-      viteConfig.optimizeDeps.entries = toArray(
-        viteConfig.optimizeDeps.entries
-      ).concat(optimizeEntries);
     },
     configureServer(server) {
       pagesService.setupServer(server);

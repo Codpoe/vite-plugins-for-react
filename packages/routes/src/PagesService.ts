@@ -45,6 +45,7 @@ function resolveRoutePath(basePath: string, relFilePath: string) {
     .replace(/\/README$/i, '') // remove '/README'
     .replace(/\/_layout$/, '') // remove '/_layout'
     .replace(/\/404$/, '/*') // transform '/404' to '/*' so this route acts like a catch-all for URLs that we don't have explicit routes for
+    .replace(/\/\[\.{3}.*?\]$/, '/*') // transform '/post/[...all]' to '/post/*'
     .replace(/\/\[(.*?)\]/g, '/:$1'); // transform 'user/[id]' to 'user/:id'
 
   routePath = normalizeRoutePath(path.join(basePath, routePath));
