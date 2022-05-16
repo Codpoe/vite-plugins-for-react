@@ -109,28 +109,37 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
     {
       name: 'vite-plugin-conventional-entries',
       enforce: 'pre',
+      config(viteUserConfig) {
+        const root = path.normalize(
+          viteUserConfig.root
+            ? path.resolve(viteUserConfig.root)
+            : process.cwd()
+        );
+
+        src = path.resolve(root, userConfig?.src || 'src');
+        entries = resolveEntries(root, src, pattern, basePath);
+
+        const srcFromRoot = path.relative(root, src);
+
+        return {
+          // Since html may dynamically append the page entry after starting the server,
+          // we cannot rely on vite's default optimization strategy.
+          // We need to manually write the entries here,
+          // so that vite can perform dependency crawling and optimization
+          optimizeDeps: {
+            entries: ['react', 'react-dom/client'].concat(
+              toArray(pattern).map(p => `${srcFromRoot}/${p}`)
+            ),
+          },
+          build: {
+            rollupOptions: {
+              input: resolveInput(root, entries),
+            },
+          },
+        };
+      },
       configResolved(config) {
         viteConfig = config;
-        src = path.resolve(viteConfig.root, userConfig?.src || 'src');
-        entries = resolveEntries(viteConfig.root, src, pattern, basePath);
-
-        const srcFromRoot = path.relative(viteConfig.root, src);
-
-        // Although it is not recommended to modify config in `configResolved`,
-        // I can't find a better way.
-
-        // Since html may dynamically append the page entry after starting the server,
-        // we cannot rely on vite's default optimization strategy.
-        // We need to manually write the entries here,
-        // so that vite can perform dependency crawling and optimization
-        viteConfig.optimizeDeps.entries = ['react', 'react-dom/client'].concat(
-          toArray(pattern).map(p => `${srcFromRoot}/${p}`)
-        );
-
-        viteConfig.build.rollupOptions.input = resolveInput(
-          viteConfig.root,
-          entries
-        );
       },
       configureServer(server) {
         function listener(filePath: string) {
