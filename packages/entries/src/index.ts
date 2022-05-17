@@ -127,9 +127,8 @@ export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
           // We need to manually write the entries here,
           // so that vite can perform dependency crawling and optimization
           optimizeDeps: {
-            entries: ['react', 'react-dom/client'].concat(
-              toArray(pattern).map(p => `${srcFromRoot}/${p}`)
-            ),
+            entries: toArray(pattern).map(p => `${srcFromRoot}/${p}`),
+            include: ['react', 'react-dom/client'],
           },
           build: {
             rollupOptions: {
