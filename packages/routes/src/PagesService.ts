@@ -260,6 +260,10 @@ export class PagesService extends EventEmitter {
     return page;
   }
 
+  getPages() {
+    return this._pages;
+  }
+
   async createRoutes(basePath: string): Promise<Route[]> {
     if (!this._startPromise) {
       throw new Error('PagesService is not started yet');

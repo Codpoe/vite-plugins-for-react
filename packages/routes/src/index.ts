@@ -10,6 +10,8 @@ import { PagesService } from './PagesService';
 import { ResolvedConfig, UserConfig } from './types';
 import { normalizeRoutePath, toArray } from './utils';
 
+export * from './types';
+
 export function conventionalRoutes(userConfig?: UserConfig): Plugin {
   let viteConfig: ResolvedViteConfig;
   let config: ResolvedConfig;
@@ -116,7 +118,11 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         });
       }
     },
-  };
+    // expose pages
+    getPages() {
+      return pagesService.getPages();
+    },
+  } as Plugin;
 }
 
 export default conventionalRoutes;
