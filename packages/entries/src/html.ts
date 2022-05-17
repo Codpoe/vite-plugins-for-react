@@ -51,7 +51,11 @@ export function spaFallbackMiddleware(
 
   return function viteSpaFallbackMiddleware(req, res, next) {
     // The path of virtual module usually starts with @, we shouldn't rewrite it
-    if (!req.url || req.url.startsWith('/@')) {
+    if (
+      !req.url ||
+      req.url.startsWith('/@') ||
+      req.url.startsWith(base + '@')
+    ) {
       return next();
     }
 
