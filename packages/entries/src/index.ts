@@ -1,4 +1,4 @@
-import { BuildOptions, ResolvedConfig, PluginOption } from 'vite';
+import { BuildOptions, ResolvedConfig, Plugin } from 'vite';
 import path from 'upath';
 import fs from 'fs-extra';
 import fg from 'fast-glob';
@@ -7,6 +7,8 @@ import { Entry, UserConfig } from './types';
 import { normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
 import { spaFallbackMiddleware, transformHtml } from './html';
+
+export * from './types';
 
 function resolveEntries(
   root: string,
@@ -98,7 +100,7 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
   }
 }
 
-export function conventionalEntries(userConfig: UserConfig = {}): PluginOption {
+export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
   const { pattern = '**/main.{js,jsx,ts,tsx}', basePath = '/' } = userConfig;
 
   let viteConfig: ResolvedConfig;
@@ -216,7 +218,11 @@ if (rootEl) {
           return code;
         }
       },
-    },
+      // expose entries
+      getEntries() {
+        return entries;
+      },
+    } as Plugin,
     // vite will emit html with fileName which is relative(root, id),
     // for example: 'dist/node_modules/.conventional-entries/index.html'.
     // In order to have a clearer directory structure, we should rewrite html fileName here.

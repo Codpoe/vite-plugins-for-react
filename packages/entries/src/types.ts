@@ -22,5 +22,3 @@ export interface UserConfig {
    */
   basePath?: string;
 }
-
-export interface ResolvedConfig extends Required<UserConfig> {}
