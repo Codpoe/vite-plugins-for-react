@@ -7,6 +7,7 @@ import { ModuleNode, ViteDevServer } from 'vite';
 import {
   extractDocBlock,
   extractFrontMatter,
+  extractMetaExport,
   hasDefaultExport,
   normalizeRoutePath,
   toArray,
@@ -25,8 +26,12 @@ export function resolvePageMeta(
   fileContent ??= fs.readFileSync(filePath, 'utf-8');
 
   // parse doc block for js / ts
+  // parse export meta
   if (/\.(js|ts)x?$/.test(filePath)) {
-    return extractDocBlock(fileContent);
+    return {
+      ...extractDocBlock(fileContent),
+      ...extractMetaExport(fileContent),
+    };
   }
 
   // parse front matter for markdown
@@ -134,6 +139,7 @@ export class PagesService extends EventEmitter {
 
         // if the file is already in pages, return directly
         if (this._pages.some(page => page.filePath === absFilePath)) {
+          // TODO: determine if meta data is equal
           return;
         }
 

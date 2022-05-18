@@ -14,6 +14,38 @@ export function extractDocBlock(fileContent: string) {
 }
 
 /**
+ * Extract the meta export
+ * @example
+ * export const meta = { title: 'abc' };
+ * -> { title: 'abc' }
+ */
+export function extractMetaExport(fileContent: string) {
+  const matchArr = fileContent.match(
+    /^\s*export\s+const\s+meta\s+=\s+(\{[\s|\S]*?\})(;|(\n){2,}|$)/m
+  );
+
+  if (!matchArr) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(
+      matchArr[1]
+        // remove trailing comma
+        .replace(/,\s*(]|})/g, '$1')
+        // ' -> "
+        .replaceAll(`'`, `"`)
+        // put double quotes on the object's key
+        .replace(/[{|\s](\w*?):/g, (m, p1: string) => m.replace(p1, `"${p1}"`))
+    );
+  } catch (err) {
+    throw new Error(
+      'Extract meta fail. Please check that the exported meta data is correct.'
+    );
+  }
+}
+
+/**
  * Extract front matter in markdown
  */
 export function extractFrontMatter(fileContent: string) {
