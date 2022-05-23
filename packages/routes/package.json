@@ -37,6 +37,7 @@
     "fs-extra": "^10.1.0",
     "gray-matter": "^4.0.3",
     "jest-docblock": "^28.0.2",
+    "magic-string": "^0.26.2",
     "micromatch": "^4.0.5",
     "upath": "^2.0.1"
   }

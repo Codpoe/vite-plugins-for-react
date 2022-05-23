@@ -30,7 +30,7 @@ export function resolvePageMeta(
   if (/\.(js|ts)x?$/.test(filePath)) {
     return {
       ...extractDocBlock(fileContent),
-      ...extractMetaExport(fileContent),
+      ...extractMetaExport(fileContent).meta,
     };
   }
 

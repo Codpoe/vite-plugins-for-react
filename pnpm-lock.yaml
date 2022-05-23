@@ -118,6 +118,7 @@ importers:
       fs-extra: ^10.1.0
       gray-matter: ^4.0.3
       jest-docblock: ^28.0.2
+      magic-string: ^0.26.2
       micromatch: ^4.0.5
       upath: ^2.0.1
     dependencies:
@@ -126,6 +127,7 @@ importers:
       fs-extra: 10.1.0
       gray-matter: 4.0.3
       jest-docblock: 28.0.2
+      magic-string: 0.26.2
       micromatch: 4.0.5
       upath: 2.0.1
     devDependencies:
@@ -2232,6 +2234,13 @@ packages:
       yallist: 4.0.0
     dev: true
 
+  /magic-string/0.26.2:
+    resolution: {integrity: sha512-NzzlXpclt5zAbmo6h6jNc8zl2gNRGHvmsZW4IvZhTC4W7k4OlLP+S5YLussa/r3ixNT66KOQfNORlXHSOy/X4A==}
+    engines: {node: '>=12'}
+    dependencies:
+      sourcemap-codec: 1.4.8
+    dev: false
+
   /merge-stream/2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
     dev: true
@@ -2724,6 +2733,10 @@ packages:
     resolution: {integrity: sha1-igOdLRAh0i0eoUyA2OpGi6LvP8w=}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /sourcemap-codec/1.4.8:
+    resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    dev: false
 
   /sprintf-js/1.0.3:
     resolution: {integrity: sha1-BOaSb2YolTVPPdAVIDYzuFcpfiw=}

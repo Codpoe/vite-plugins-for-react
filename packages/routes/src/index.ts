@@ -1,14 +1,16 @@
+import { readFile } from 'fs-extra';
 import path from 'upath';
 import {
   Plugin,
   transformWithEsbuild,
   ResolvedConfig as ResolvedViteConfig,
 } from 'vite';
+import MagicString from 'magic-string';
 import { resolveConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
 import { ResolvedConfig, UserConfig } from './types';
-import { normalizeRoutePath, toArray } from './utils';
+import { extractMetaExport, normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
 
@@ -116,6 +118,25 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         return transformWithEsbuild(code, RESOLVED_ROUTES_MODULE_ID, {
           loader: 'jsx',
         });
+      }
+
+      // export meta will affect @vitejs/plugin-react's judgment of react refresh boundary,
+      // so we need to remove export statement for meta.
+      // https://github.com/vitejs/vite/blob/9baa70b788ec0b0fc419db30d627567242c6af7d/packages/plugin-react/src/fast-refresh.ts#L87
+      const [filePath] = id.split('?');
+
+      if (
+        /\.([jt]sx?)$/.test(filePath) &&
+        pagesService.checkPageFile(filePath)
+      ) {
+        let code = await readFile(id, 'utf-8');
+        const { start, end } = extractMetaExport(code);
+
+        if (start && end) {
+          code = new MagicString(code).remove(start, end).toString();
+        }
+
+        return code;
       }
     },
     // expose pages
