@@ -1,7 +1,13 @@
 import path from 'upath';
 import fs from 'fs-extra';
 import { camelCase, uniq } from 'lodash';
-import { Connect, normalizePath, send, ViteDevServer } from 'vite';
+import {
+  Connect,
+  normalizePath,
+  send,
+  ServerOptions,
+  ViteDevServer,
+} from 'vite';
 import history, { Rewrite } from 'connect-history-api-fallback';
 import { Entry } from './types';
 import {
@@ -14,11 +20,7 @@ import {
 } from './constants';
 import { cleanUrl, normalizeRoutePath } from './utils';
 
-function resolveRewrites(
-  root: string,
-  base: string,
-  entries: Entry[]
-): Rewrite[] {
+function resolveRewrites(server: ViteDevServer, entries: Entry[]): Rewrite[] {
   return entries.map<Rewrite>(entry => {
     return {
       from: new RegExp(`^${entry.routePath}.*`),
@@ -26,7 +28,9 @@ function resolveRewrites(
         // priority use of index.html in the entry
         if (fs.existsSync(entry.htmlPath)) {
           return normalizeRoutePath(
-            base + '/' + path.relative(root, entry.htmlPath)
+            server.config.base +
+              '/' +
+              path.relative(server.config.root, entry.htmlPath)
           );
         }
         return `/index.html`;
@@ -35,13 +39,22 @@ function resolveRewrites(
   });
 }
 
+function checkMatchProxy(proxy: ServerOptions['proxy'], url: string): boolean {
+  if (!proxy) {
+    return false;
+  }
+
+  return Object.keys(proxy).some(key =>
+    key.startsWith('^') ? new RegExp(key).test(url) : url.startsWith(key)
+  );
+}
+
 export function spaFallbackMiddleware(
-  root: string,
-  base: string,
+  server: ViteDevServer,
   entries: Entry[]
 ): Connect.NextHandleFunction {
   // setup rewrites so that each route can correctly find the corresponding html file
-  const rewrites = resolveRewrites(root, base, entries);
+  const rewrites = resolveRewrites(server, entries);
 
   const historyMiddleware = history({
     // logger: console.log.bind(console),
@@ -54,8 +67,13 @@ export function spaFallbackMiddleware(
     if (
       !req.url ||
       req.url.startsWith('/@') ||
-      req.url.startsWith(base + '@')
+      req.url.startsWith(server.config.base + '@')
     ) {
+      return next();
+    }
+
+    // If match proxy config, skip rewrite
+    if (checkMatchProxy(server.config.server.proxy, req.url)) {
       return next();
     }
 

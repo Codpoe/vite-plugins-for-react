@@ -1,4 +1,4 @@
-import { BuildOptions, ResolvedConfig, Plugin } from 'vite';
+import { BuildOptions, Plugin } from 'vite';
 import path from 'upath';
 import fs from 'fs-extra';
 import fg from 'fast-glob';
@@ -53,12 +53,6 @@ function resolveInput(
   root: string,
   entries: Entry[]
 ): NonNullable<BuildOptions['rollupOptions']>['input'] {
-  const nodeModulesDir = path.resolve(root, 'node_modules');
-  const outputDir = path.resolve(nodeModulesDir, '.conventional-entries');
-
-  fs.ensureDirSync(outputDir);
-  fs.emptyDirSync(outputDir);
-
   /**
    * SPA:
    * {
@@ -101,7 +95,6 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
 export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
   const { pattern = '**/main.{js,jsx,ts,tsx}', basePath = '/' } = userConfig;
 
-  let viteConfig: ResolvedConfig;
   let src: string;
   let entries: Entry[];
 
@@ -137,9 +130,6 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
           },
         };
       },
-      configResolved(config) {
-        viteConfig = config;
-      },
       configureServer(server) {
         function listener(filePath: string) {
           if (!mm.isMatch(filePath, pattern, { cwd: src })) {
@@ -168,9 +158,7 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
           .on('change', listener)
           .on('unlink', listener);
 
-        server.middlewares.use(
-          spaFallbackMiddleware(viteConfig.root, viteConfig.base, entries)
-        );
+        server.middlewares.use(spaFallbackMiddleware(server, entries));
 
         // return () => {
         //   server.middlewares.use(htmlMiddleware(server));
