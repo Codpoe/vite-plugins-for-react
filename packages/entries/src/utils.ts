@@ -4,6 +4,14 @@ export function normalizeRoutePath(routePath: string) {
   return path.normalize('/' + routePath.replace(/\/+$/, ''));
 }
 
+/**
+ * Flatten path.
+ * @example /a/b/c -> a~b~c
+ */
+export function flattenPath(p: string): string {
+  return p.replace(/^\//, '').replaceAll('/', '~');
+}
+
 export function cleanUrl(url: string): string {
   return url.replace(/#.*$/s, '').replace(/\?.*$/s, '');
 }

@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig } from './types';
-import { normalizeRoutePath, toArray } from './utils';
+import { flattenPath, normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
 import { spaFallbackMiddleware, transformHtml } from './html';
 
@@ -37,7 +37,7 @@ function resolveEntries(
       // will create symlink for html path later
       const htmlPath = path.resolve(
         outputDir,
-        `${routePath.replace(basePath, '').replace(/^\//, '') || 'index'}.html`
+        `${flattenPath(routePath.slice(basePath.length)) || 'index'}.html`
       );
 
       return {
@@ -74,9 +74,7 @@ function resolveInput(
   const input = entries.reduce<Record<string, string>>((res, entry) => {
     ensureLinkHtmlPath(root, entry);
 
-    const inputKey =
-      'entry~' +
-      (entry.routePath.replace(/^\//, '').replace('/', '~') || 'main');
+    const inputKey = 'entry~' + (flattenPath(entry.routePath) || 'main');
 
     res[inputKey] = entry.htmlPath;
     return res;
