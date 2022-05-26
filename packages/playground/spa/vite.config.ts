@@ -11,5 +11,8 @@ export default defineConfig({
       '^/other-api': 'http://example.com/other-api',
     },
   },
+  build: {
+    minify: false,
+  },
   plugins: [react(), conventionalEntries(), conventionalRoutes()],
 });

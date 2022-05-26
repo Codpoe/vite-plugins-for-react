@@ -113,7 +113,10 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         const query = new URLSearchParams(id.split('?')[1]);
         const basePath = normalizeRoutePath(query.get('basePath') || '/');
 
-        const code = await pagesService.generateRoutesCode(basePath);
+        const code = await pagesService.generateRoutesCode(
+          basePath,
+          viteConfig
+        );
 
         return transformWithEsbuild(code, RESOLVED_ROUTES_MODULE_ID, {
           loader: 'jsx',

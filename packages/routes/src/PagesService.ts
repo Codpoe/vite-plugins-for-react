@@ -3,7 +3,11 @@ import path from 'upath';
 import fs from 'fs-extra';
 import fg from 'fast-glob';
 import mm from 'micromatch';
-import { ModuleNode, ViteDevServer } from 'vite';
+import {
+  ModuleNode,
+  ViteDevServer,
+  ResolvedConfig as ViteResolvedConfig,
+} from 'vite';
 import {
   extractDocBlock,
   extractFrontMatter,
@@ -14,6 +18,7 @@ import {
 } from './utils';
 import { Page, ResolvedConfig, Route } from './types';
 import { PAGE_EXTS, RESOLVED_ROUTES_MODULE_ID } from './constants';
+import { generateLazyCode } from './lazyWithPreload';
 
 /**
  * - parse doc block for normal page
@@ -334,30 +339,35 @@ export class PagesService extends EventEmitter {
     return routes;
   }
 
-  async generateRoutesCode(basePath: string): Promise<string> {
+  async generateRoutesCode(
+    basePath: string,
+    viteConfig: ViteResolvedConfig
+  ): Promise<string> {
     const routes = await this.createRoutes(basePath);
     const rootLayout = routes[0]?.children ? routes[0] : null;
 
     let index = 0;
-    let importCode = `import React from 'react';\n`;
+    let importRoutesCode = '';
 
     let routesCode = JSON.stringify(routes, null, 2).replace(
-      /"component":\s"(.*?)"/g,
-      (_str: string, component: string) => {
+      /( *)"component":\s"(.*?)"/g,
+      (_str: string, space: string, component: string) => {
         const localName = `__ConventionalRoute__${index++}`;
 
         if (rootLayout && component === rootLayout.component) {
-          importCode += `import ${localName} from '${component}';\n`;
+          importRoutesCode += `import ${localName} from '${component}';\n`;
         } else {
-          importCode += `const ${localName} = React.lazy(() => import('${component}'));\n`;
+          importRoutesCode += `const ${localName} = lazyWithPreload(() => import('${component}'));\n`;
         }
 
-        return `"element": <${localName} />`;
+        return `${space}"component": ${localName},\n${space}"element": <${localName} />`;
       }
     );
 
     // prepend import code
-    routesCode = `${importCode}
+    routesCode = `import React from 'react';
+${generateLazyCode(viteConfig)}
+${importRoutesCode}
 const routes = ${routesCode};
 export default routes;
 `;

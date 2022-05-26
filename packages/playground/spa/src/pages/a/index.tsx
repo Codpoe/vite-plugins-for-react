@@ -1,6 +1,9 @@
 /**
  * @title aaa
  */
+import { useContext } from 'react';
+import { Link, matchRoutes, resolvePath, useLocation } from 'react-router-dom';
+import { appContext } from '../../context';
 import './index.css';
 
 export const meta = {
@@ -12,5 +15,26 @@ export const meta = {
 };
 
 export default function A() {
-  return <div>a page</div>;
+  const { routes } = useContext(appContext);
+  const { pathname } = useLocation();
+
+  return (
+    <div>
+      a page
+      <div>
+        <Link
+          to="../user"
+          onMouseOver={() => {
+            const targetPath = resolvePath('../user', pathname);
+            const routeMatches = matchRoutes(routes, targetPath);
+            routeMatches?.forEach(m => {
+              (m.route as any).component?.preload?.();
+            });
+          }}
+        >
+          to user page (hover to preload)
+        </Link>
+      </div>
+    </div>
+  );
 }
