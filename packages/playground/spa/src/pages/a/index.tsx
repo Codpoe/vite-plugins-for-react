@@ -24,7 +24,7 @@ export default function A() {
       <div>
         <Link
           to="../user"
-          onMouseOver={() => {
+          onMouseEnter={() => {
             const targetPath = resolvePath('../user', pathname);
             const routeMatches = matchRoutes(routes, targetPath);
             routeMatches?.forEach(m => {

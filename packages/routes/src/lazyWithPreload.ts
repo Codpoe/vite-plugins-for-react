@@ -46,7 +46,8 @@ function lazyWithPreload(factory: () => Promise<any>) {
 
       const isCss = link.endsWith('.css');
 
-      if (document.querySelector(`link[rel="prefetch"][href="${link}"]`)) {
+      // check if the file is already prefetched / preloaded
+      if (document.querySelector(`link[href="${link}"]`)) {
         return;
       }
 
