@@ -47,16 +47,16 @@ function autoDetectPages(src: string, root: string): UserPages | undefined {
 /**
  * resolve pages config
  */
-function resolvePagesConfig(
+export function resolvePagesConfig(
   root: string,
-  src: string,
+  src: string | undefined,
   pages: UserPages | undefined,
   defaultIgnore: string | string[]
 ): PagesConfigWithType {
   let type: PagesConfigWithType['type'];
 
   // if pages is not defined, auto detect pages in src
-  if (!pages) {
+  if (!pages && src) {
     type = 'auto';
     pages = autoDetectPages(src, root);
   } else {

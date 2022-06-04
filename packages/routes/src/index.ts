@@ -6,13 +6,15 @@ import {
   ResolvedConfig as ResolvedViteConfig,
 } from 'vite';
 import MagicString from 'magic-string';
-import { resolveConfig } from './config';
+import { resolveConfig, resolvePagesConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
 import { ResolvedConfig, UserConfig } from './types';
 import { extractMetaExport, normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
+
+export { resolvePagesConfig };
 
 export function conventionalRoutes(userConfig?: UserConfig): Plugin {
   let viteConfig: ResolvedViteConfig;
