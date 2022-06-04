@@ -11,7 +11,7 @@ export interface Route {
   path: string;
   component: any;
   children?: Route[];
-  meta: Record<string, any>;
+  meta?: Record<string, any>;
 }
 
 export interface PagesConfigItem {

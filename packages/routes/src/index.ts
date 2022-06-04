@@ -110,14 +110,15 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         return `${RESOLVED_ROUTES_MODULE_ID}?basePath=${basePath}`;
       }
     },
-    async load(id) {
+    async load(id, opts) {
       if (id.startsWith(RESOLVED_ROUTES_MODULE_ID)) {
         const query = new URLSearchParams(id.split('?')[1]);
         const basePath = normalizeRoutePath(query.get('basePath') || '/');
 
         const code = await pagesService.generateRoutesCode(
           basePath,
-          viteConfig
+          viteConfig,
+          opts?.ssr
         );
 
         return transformWithEsbuild(code, RESOLVED_ROUTES_MODULE_ID, {

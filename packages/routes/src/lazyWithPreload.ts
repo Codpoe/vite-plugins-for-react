@@ -9,7 +9,9 @@ declare const document: any;
  * Add preload function to `React.lazy`.
  * This function will be injected into routes code
  */
-function lazyWithPreload(factory: () => Promise<any>) {
+function lazyWithPreload(
+  factory: (() => Promise<any>) & { _result?: Promise<any> }
+) {
   const relativeBase = base === '' || base.startsWith('.');
 
   const links = factory
@@ -34,6 +36,29 @@ function lazyWithPreload(factory: () => Promise<any>) {
   const LazyComponent = React.lazy(factory);
 
   LazyComponent.preload = async function preload() {
+    if (LazyComponent._payload && typeof LazyComponent._init === 'function') {
+      try {
+        return LazyComponent._init(LazyComponent._payload);
+      } catch (err) {
+        // lazy init function will throw promise
+        if (
+          err instanceof Promise ||
+          typeof (err as any)?.then === 'function'
+        ) {
+          return;
+        }
+        throw err;
+      }
+    }
+
+    if (factory._result) {
+      return factory._result;
+    }
+
+    return (factory._result = factory());
+  };
+
+  LazyComponent.prefetch = async function prefetch() {
     if (!links || !links.length) {
       return;
     }

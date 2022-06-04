@@ -341,7 +341,8 @@ export class PagesService extends EventEmitter {
 
   async generateRoutesCode(
     basePath: string,
-    viteConfig: ViteResolvedConfig
+    viteConfig: ViteResolvedConfig,
+    ssr?: boolean
   ): Promise<string> {
     const routes = await this.createRoutes(basePath);
     const rootLayout = routes[0]?.children ? routes[0] : null;
@@ -354,7 +355,7 @@ export class PagesService extends EventEmitter {
       (_str: string, space: string, component: string) => {
         const localName = `__ConventionalRoute__${index++}`;
 
-        if (rootLayout && component === rootLayout.component) {
+        if (ssr || (rootLayout && component === rootLayout.component)) {
           importRoutesCode += `import ${localName} from '${component}';\n`;
         } else {
           importRoutesCode += `const ${localName} = lazyWithPreload(() => import('${component}'));\n`;
