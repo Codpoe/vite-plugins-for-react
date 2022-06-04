@@ -4,7 +4,7 @@ declare module 'virtual:conventional-routes*' {
     component: any;
     element: any;
     children?: Route[];
-    meta: Record<string, any>;
+    meta?: Record<string, any>;
   }
 
   const routes: Route[];
