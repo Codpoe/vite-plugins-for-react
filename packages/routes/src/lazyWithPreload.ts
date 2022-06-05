@@ -38,14 +38,17 @@ function lazyWithPreload(
   LazyComponent.preload = async function preload() {
     if (LazyComponent._payload && typeof LazyComponent._init === 'function') {
       try {
-        return LazyComponent._init(LazyComponent._payload);
+        await LazyComponent._init(LazyComponent._payload);
+        // return page module
+        return LazyComponent._payload._result;
       } catch (err) {
-        // lazy init function will throw promise
+        // lazy init function will throw promise,
+        // so we should return it
         if (
           err instanceof Promise ||
           typeof (err as any)?.then === 'function'
         ) {
-          return;
+          return err;
         }
         throw err;
       }
