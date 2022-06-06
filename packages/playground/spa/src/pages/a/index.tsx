@@ -28,11 +28,11 @@ export default function A() {
             const targetPath = resolvePath('../user', pathname);
             const routeMatches = matchRoutes(routes, targetPath);
             routeMatches?.forEach(m => {
-              (m.route as any).component?.preload?.();
+              (m.route as any).component?.prefetch?.();
             });
           }}
         >
-          to user page (hover to preload)
+          to user page (hover to prefetch)
         </Link>
       </div>
     </div>

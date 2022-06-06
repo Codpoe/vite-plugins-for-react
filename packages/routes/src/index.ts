@@ -1,16 +1,14 @@
-import { readFile } from 'fs-extra';
 import path from 'upath';
 import {
   Plugin,
   transformWithEsbuild,
   ResolvedConfig as ResolvedViteConfig,
 } from 'vite';
-import MagicString from 'magic-string';
 import { resolveConfig, resolvePagesConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
 import { Page, ResolvedConfig, UserConfig } from './types';
-import { extractMetaExport, normalizeRoutePath, toArray } from './utils';
+import { normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
 
@@ -24,10 +22,6 @@ declare module 'vite' {
        */
       getPages?: () => Page[];
     };
-    /**
-     * @deprecated prefer to use api.getPages
-     */
-    getPages?: () => Page[];
   }
 }
 
@@ -140,24 +134,29 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
           loader: 'jsx',
         });
       }
-
+    },
+    transform(code, id) {
       // export meta will affect @vitejs/plugin-react's judgment of react refresh boundary,
-      // so we need to remove export statement for meta.
+      // so we need to handle hmr for meta export.
       // https://github.com/vitejs/vite/blob/9baa70b788ec0b0fc419db30d627567242c6af7d/packages/plugin-react/src/fast-refresh.ts#L87
-      const [filePath] = id.split('?');
-
       if (
-        /\.([jt]sx?)$/.test(filePath) &&
-        pagesService.checkPageFile(filePath)
+        pagesService.checkPageFile(id) &&
+        code.includes('export const meta =') &&
+        !code.includes('import.meta.hot.accept()')
       ) {
-        let code = await readFile(id, 'utf-8');
-        const { start, end } = extractMetaExport(code);
+        return `${code}
+          if (import.meta.hot) {
+            // cache meta
+            import.meta.hot.data.meta = import.meta.hot.data.meta || meta;
 
-        if (start && end) {
-          code = new MagicString(code).remove(start, end).toString();
-        }
-
-        return code;
+            import.meta.hot.accept(newModule => {
+              // if the meta has changed, invalidate the module
+              if (JSON.stringify(newModule.meta) !== JSON.stringify(import.meta.hot.data.meta)) {
+                import.meta.hot.invalidate();
+              }
+            })
+          }
+        `;
       }
     },
     api: {
@@ -165,11 +164,7 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         return pagesService.getPages();
       },
     },
-    // expose pages
-    getPages() {
-      return pagesService.getPages();
-    },
-  } as Plugin;
+  };
 }
 
 export default conventionalRoutes;
