@@ -9,12 +9,27 @@ import MagicString from 'magic-string';
 import { resolveConfig, resolvePagesConfig } from './config';
 import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
 import { PagesService } from './PagesService';
-import { ResolvedConfig, UserConfig } from './types';
+import { Page, ResolvedConfig, UserConfig } from './types';
 import { extractMetaExport, normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
 
 export { resolvePagesConfig };
+
+declare module 'vite' {
+  export interface Plugin {
+    api?: {
+      /**
+       * expose pages
+       */
+      getPages?: () => Page[];
+    };
+    /**
+     * @deprecated prefer to use api.getPages
+     */
+    getPages?: () => Page[];
+  }
+}
 
 export function conventionalRoutes(userConfig?: UserConfig): Plugin {
   let viteConfig: ResolvedViteConfig;
@@ -144,6 +159,11 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
 
         return code;
       }
+    },
+    api: {
+      getPages() {
+        return pagesService.getPages();
+      },
     },
     // expose pages
     getPages() {
