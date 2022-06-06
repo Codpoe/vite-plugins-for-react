@@ -10,21 +10,23 @@ import { spaFallbackMiddleware, transformHtml } from './html';
 
 export * from './types';
 
+function getHtmlOutDir(root: string) {
+  const nodeModulesDir = path.resolve(root, 'node_modules');
+
+  if (!fs.existsSync(nodeModulesDir)) {
+    throw new Error('node_modules directory is not found');
+  }
+
+  return path.resolve(nodeModulesDir, '.conventional-entries');
+}
+
 function resolveEntries(
   root: string,
   src: string,
   pattern: string | string[],
   basePath: string
 ): Entry[] {
-  const nodeModulesDir = path.resolve(root, 'node_modules');
-  const outputDir = path.resolve(nodeModulesDir, '.conventional-entries');
-
-  if (!fs.existsSync(nodeModulesDir)) {
-    throw new Error('node_modules directory is not found');
-  }
-
-  fs.ensureDirSync(outputDir);
-  fs.emptyDirSync(outputDir);
+  const htmlOutDir = getHtmlOutDir(root);
 
   return fg
     .sync(pattern, { cwd: src, absolute: true })
@@ -36,7 +38,7 @@ function resolveEntries(
       const serverPath = normalizeRoutePath(path.relative(root, entryPath));
       // will create symlink for html path later
       const htmlPath = path.resolve(
-        outputDir,
+        htmlOutDir,
         `${flattenPath(routePath.slice(basePath.length)) || 'index'}.html`
       );
 
@@ -53,6 +55,11 @@ function resolveInput(
   root: string,
   entries: Entry[]
 ): NonNullable<BuildOptions['rollupOptions']>['input'] {
+  const htmlOutDir = getHtmlOutDir(root);
+
+  fs.ensureDirSync(htmlOutDir);
+  fs.emptyDirSync(htmlOutDir);
+
   /**
    * SPA:
    * {
