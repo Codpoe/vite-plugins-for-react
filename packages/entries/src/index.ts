@@ -125,7 +125,12 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
           },
           build: {
             rollupOptions: {
-              input: resolveInput(root, entries),
+              // prefer to use user specified input,
+              // because in some cases it may be necessary to specify other input,
+              // for example: ssr
+              input:
+                viteUserConfig.build?.rollupOptions?.input ||
+                resolveInput(root, entries),
             },
           },
         };
