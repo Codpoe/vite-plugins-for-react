@@ -18,7 +18,7 @@ import {
 } from './utils';
 import { Page, ResolvedConfig, Route } from './types';
 import { PAGE_EXTS, RESOLVED_ROUTES_MODULE_ID } from './constants';
-import { generateLazyCode } from './lazyWithPreload';
+import { generateWithPreloadCode } from './withPreload';
 
 /**
  * - parse doc block for normal page
@@ -354,20 +354,24 @@ export class PagesService extends EventEmitter {
       /( *)"component":\s"(.*?)"/g,
       (_str: string, space: string, component: string) => {
         const localName = `__ConventionalRoute__${index++}`;
+        const localNameStar = `${localName}__star`;
 
         if (ssr || (rootLayout && component === rootLayout.component)) {
-          importRoutesCode += `import ${localName} from '${component}';\n`;
+          importRoutesCode += [
+            `import * as ${localNameStar} from '${component}';`,
+            `const ${localName} = withPreload(${localNameStar})\n`,
+          ].join('\n');
         } else {
-          importRoutesCode += `const ${localName} = lazyWithPreload(() => import('${component}'));\n`;
+          importRoutesCode += `const ${localName} = withPreload(() => import('${component}'));\n`;
         }
 
-        return `${space}"component": ${localName},\n${space}"element": <${localName} />`;
+        return `${space}"component": ${localName},\n${space}"element": <${localName}.component />`;
       }
     );
 
     // prepend import code
     routesCode = `import React from 'react';
-${generateLazyCode(viteConfig)}
+${generateWithPreloadCode(viteConfig)}
 ${importRoutesCode}
 const routes = ${routesCode};
 export default routes;
