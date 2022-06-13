@@ -141,10 +141,16 @@ export class PagesService extends EventEmitter {
       })
       .on('change', async filePath => {
         const absFilePath = path.resolve(this.config.root, filePath);
+        const page = this._pages.find(p => p.filePath === absFilePath);
 
-        // if the file is already in pages, return directly
-        if (this._pages.some(page => page.filePath === absFilePath)) {
-          // TODO: determine if meta data is equal
+        if (page) {
+          // if the file is already in pages, but the meta data is changed,
+          // update the meta field and reload.
+          const newPageMeta = resolvePageMeta(absFilePath);
+          if (JSON.stringify(newPageMeta) !== JSON.stringify(page.meta)) {
+            page.meta = newPageMeta;
+            this.onPagesChanged();
+          }
           return;
         }
 
