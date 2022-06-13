@@ -64,11 +64,13 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
                 const assetsDir = viteConfig.build.assetsDir;
 
                 // By default, "src/pages/a/b/index.js" and "src/pages/c/index.js"
-                // will have the same chunk name: "index", ant it's a little confusing.
+                // will have the same chunk name: "index", and it's a little confusing.
                 //
                 // To avoid duplicate chunk names, we should custom the names here.
                 // eg: src/pages/a/b/index.js -> page~a~b
                 //     src/pages/c/index.js   -> page~c
+                //     src/pages/d/[id].js    -> page~d~{id}
+                //     src/pages/e/[...all].js    -> page~e~{all}
                 if (chunkInfo.isDynamicEntry && chunkInfo.facadeModuleId) {
                   const pageConfigItem = pagesService.checkPageFile(
                     chunkInfo.facadeModuleId
@@ -86,6 +88,7 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
                     const name = path
                       .trimExt(withBase)
                       .replace(/^(.+)\/(index|README)/, '$1') // remove trailing /index or /README
+                      .replace(/\[(?:\.{3})?(.*?)\]/g, '{$1}') // transform [id] or [...id] to {id}
                       .split('/')
                       .filter(Boolean) // remove leading slash
                       .join('~'); // a/b/c -> a~b~c
