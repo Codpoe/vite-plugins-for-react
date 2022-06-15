@@ -6,7 +6,12 @@ import mm from 'micromatch';
 import { Entry, UserConfig } from './types';
 import { flattenPath, normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
-import { spaFallbackMiddleware, transformHtml } from './html';
+import {
+  minifyHtml,
+  prettifyHtml,
+  spaFallbackMiddleware,
+  transformHtml,
+} from './html';
 
 export * from './types';
 
@@ -100,7 +105,12 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
 }
 
 export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
-  const { pattern = '**/main.{js,jsx,ts,tsx}', basePath = '/' } = userConfig;
+  const {
+    pattern = '**/main.{js,jsx,ts,tsx}',
+    basePath = '/',
+    prettifyHtml: userPrettifyHtml = false,
+    minifyHtml: userMinifyHtml = true,
+  } = userConfig;
 
   let src: string;
   let entries: Entry[];
@@ -216,30 +226,39 @@ if (rootEl) {
           return code;
         }
       },
-      // expose entries
-      getEntries() {
-        return entries;
+      api: {
+        // expose entries
+        getEntries() {
+          return entries;
+        },
       },
-    } as Plugin,
-    // vite will emit html with fileName which is relative(root, id),
-    // for example: 'dist/node_modules/.conventional-entries/index.html'.
-    // In order to have a clearer directory structure, we should rewrite html fileName here.
-    // see also: https://github.com/vitejs/vite/blob/1878f465d26d1c61a29ede72882d54d7e95c1042/packages/vite/src/node/plugins/html.ts#L672
+    },
     {
-      name: 'vite-plugin-conventional-entries:transform-html-path',
+      name: 'vite-plugin-conventional-entries:html',
       enforce: 'post',
-      generateBundle(_options, bundle) {
-        Object.values(bundle).forEach(chunkOrAsset => {
+      async generateBundle(_options, bundle) {
+        for (const chunk of Object.values(bundle)) {
           if (
-            chunkOrAsset.type === 'asset' &&
-            chunkOrAsset.fileName.endsWith('.html')
+            chunk.type === 'asset' &&
+            chunk.fileName.endsWith('.html') &&
+            typeof chunk.source === 'string'
           ) {
-            chunkOrAsset.fileName = chunkOrAsset.fileName.replace(
+            // vite will emit html with fileName which is relative(root, id),
+            // for example: 'dist/node_modules/.conventional-entries/index.html'.
+            // In order to have a clearer directory structure, we should rewrite html fileName here.
+            // see also: https://github.com/vitejs/vite/blob/1878f465d26d1c61a29ede72882d54d7e95c1042/packages/vite/src/node/plugins/html.ts#L672
+            chunk.fileName = chunk.fileName.replace(
               'node_modules/.conventional-entries/',
               ''
             );
+
+            if (userPrettifyHtml) {
+              chunk.source = prettifyHtml(chunk.source, userPrettifyHtml);
+            } else if (userMinifyHtml) {
+              chunk.source = await minifyHtml(chunk.source, userMinifyHtml);
+            }
           }
-        });
+        }
       },
     },
   ];

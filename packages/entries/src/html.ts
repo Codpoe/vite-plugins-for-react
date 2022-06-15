@@ -9,7 +9,9 @@ import {
   ViteDevServer,
 } from 'vite';
 import history, { Rewrite } from 'connect-history-api-fallback';
-import { Entry } from './types';
+import { format } from 'prettier';
+import { minify } from 'html-minifier-terser';
+import { Entry, UserConfig } from './types';
 import {
   BODY_INJECT_RE,
   BODY_PREPEND_INJECT_RE,
@@ -248,4 +250,41 @@ export function transformHtml(html: string, entry: Entry): string {
   html = injectEntryScript(html, entry);
 
   return html;
+}
+
+export function prettifyHtml(
+  html: string,
+  options: NonNullable<UserConfig['prettifyHtml']>
+) {
+  if (options === false) {
+    return html;
+  }
+  return format(html, {
+    parser: 'html',
+    ...(options === true ? {} : options),
+  });
+}
+
+export async function minifyHtml(
+  html: string,
+  options: NonNullable<UserConfig['minifyHtml']>
+) {
+  if (options === false) {
+    return html;
+  }
+  return minify(
+    html,
+    options === true
+      ? {
+          collapseWhitespace: true,
+          keepClosingSlash: true,
+          removeComments: true,
+          removeRedundantAttributes: true,
+          removeScriptTypeAttributes: true,
+          removeStyleLinkTypeAttributes: true,
+          useShortDoctype: true,
+          minifyCSS: true,
+        }
+      : options
+  );
 }

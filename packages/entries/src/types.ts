@@ -1,3 +1,6 @@
+import { Options as PrettierOptions } from 'prettier';
+import { Options as HtmlMinifierOptions } from 'html-minifier-terser';
+
 export interface Entry {
   entryPath: string;
   routePath: string;
@@ -21,4 +24,12 @@ export interface UserConfig {
    * @default '/'
    */
   basePath?: string;
+  /**
+   * use prettier to format html
+   */
+  prettifyHtml?: boolean | PrettierOptions;
+  /**
+   * minify html
+   */
+  minifyHtml?: boolean | HtmlMinifierOptions;
 }
