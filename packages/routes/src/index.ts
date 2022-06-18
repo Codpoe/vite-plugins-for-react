@@ -5,14 +5,23 @@ import {
   ResolvedConfig as ResolvedViteConfig,
 } from 'vite';
 import { resolveConfig, resolvePagesConfig } from './config';
-import { RESOLVED_ROUTES_MODULE_ID, ROUTES_MODULE_ID } from './constants';
+import {
+  PAGES_DATA_MODULE_ID,
+  RESOLVED_PAGES_DATA_MODULE_ID,
+  RESOLVED_ROUTES_MODULE_ID,
+  ROUTES_MODULE_ID,
+} from './constants';
 import { PagesService } from './PagesService';
 import { Page, ResolvedConfig, UserConfig } from './types';
 import { normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
 
-export { resolvePagesConfig, RESOLVED_ROUTES_MODULE_ID };
+export {
+  resolvePagesConfig,
+  RESOLVED_ROUTES_MODULE_ID,
+  RESOLVED_PAGES_DATA_MODULE_ID,
+};
 
 declare module 'vite' {
   export interface Plugin {
@@ -20,7 +29,7 @@ declare module 'vite' {
       /**
        * expose pages
        */
-      getPages?: () => Page[];
+      getPages?: () => Promise<Page[]>;
     };
   }
 }
@@ -121,6 +130,10 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         );
         return `${RESOLVED_ROUTES_MODULE_ID}?basePath=${basePath}`;
       }
+
+      if (source === PAGES_DATA_MODULE_ID) {
+        return RESOLVED_PAGES_DATA_MODULE_ID;
+      }
     },
     async load(id, opts) {
       if (id.startsWith(RESOLVED_ROUTES_MODULE_ID)) {
@@ -136,6 +149,10 @@ export function conventionalRoutes(userConfig?: UserConfig): Plugin {
         return transformWithEsbuild(code, RESOLVED_ROUTES_MODULE_ID, {
           loader: 'jsx',
         });
+      }
+
+      if (id === RESOLVED_PAGES_DATA_MODULE_ID) {
+        return pagesService.generatePagesDataCode();
       }
     },
     transform(code, id) {

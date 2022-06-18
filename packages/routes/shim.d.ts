@@ -10,3 +10,15 @@ declare module 'virtual:conventional-routes*' {
   const routes: Route[];
   export default routes;
 }
+
+declare module 'virtual:conventional-pages-data' {
+  export interface PageData {
+    basePath: string;
+    routePath: string;
+    filePath: string;
+    meta?: Record<string, any>;
+  }
+
+  const pagesData: Record<string, PageData>;
+  export default pagesData;
+}

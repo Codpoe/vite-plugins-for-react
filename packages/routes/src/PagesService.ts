@@ -17,7 +17,11 @@ import {
   toArray,
 } from './utils';
 import { Page, ResolvedConfig, Route } from './types';
-import { PAGE_EXTS, RESOLVED_ROUTES_MODULE_ID } from './constants';
+import {
+  PAGE_EXTS,
+  RESOLVED_PAGES_DATA_MODULE_ID,
+  RESOLVED_ROUTES_MODULE_ID,
+} from './constants';
 import { generateWithPreloadCode } from './withPreload';
 
 /**
@@ -220,11 +224,14 @@ export class PagesService extends EventEmitter {
       return;
     }
 
-    const mods = this._server.moduleGraph.getModulesByFile(
-      RESOLVED_ROUTES_MODULE_ID
-    );
+    const mods = [
+      RESOLVED_ROUTES_MODULE_ID,
+      RESOLVED_PAGES_DATA_MODULE_ID,
+    ].flatMap(id => [
+      ...(this._server?.moduleGraph.getModulesByFile(id) || []),
+    ]);
 
-    if (mods) {
+    if (mods.length) {
       const seen = new Set<ModuleNode>();
       mods.forEach(mod => {
         this._server?.moduleGraph.invalidateModule(mod, seen);
@@ -277,18 +284,19 @@ export class PagesService extends EventEmitter {
     return page;
   }
 
-  getPages() {
-    return this._pages;
-  }
-
-  async createRoutes(basePath: string): Promise<Route[]> {
+  async getPages() {
     if (!this._startPromise) {
       throw new Error('PagesService is not started yet');
     }
 
     await this._startPromise;
+    return this._pages;
+  }
 
-    let pages = this._pages.filter(page => page.basePath === basePath);
+  async createRoutes(basePath: string): Promise<Route[]> {
+    let pages = (await this.getPages()).filter(
+      page => page.basePath === basePath
+    );
     // run hook: onCreatePages
     pages = (await this.config.onCreatePages?.(pages)) || pages;
 
@@ -388,5 +396,24 @@ export default routes;
       (await this.config.onGenerateRoutesCode?.(routesCode)) || routesCode;
 
     return routesCode;
+  }
+
+  async generatePagesDataCode() {
+    const pagesData = (await this.getPages()).reduce<Record<string, Page>>(
+      (res, page) => {
+        // skip layout file and 404 file
+        if (page.isLayout || page.is404) {
+          return res;
+        }
+
+        res[page.routePath] = page;
+        return res;
+      },
+      {}
+    );
+
+    return `export const pagesData = ${JSON.stringify(pagesData, null, 2)};
+export default pagesData;
+`;
   }
 }
