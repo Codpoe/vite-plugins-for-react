@@ -12,7 +12,7 @@ import { normalizeRoutePath, toArray } from './utils';
 
 export * from './types';
 
-export { resolvePagesConfig };
+export { resolvePagesConfig, RESOLVED_ROUTES_MODULE_ID };
 
 declare module 'vite' {
   export interface Plugin {
