@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-conventional-routes",
-  "version": "0.1.12-beta.6",
+  "version": "0.1.12-beta.7",
   "description": "vite plugin to generate conventional routes",
   "keywords": [
     "vite",
