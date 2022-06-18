@@ -14,6 +14,13 @@ export interface Route {
   meta?: Record<string, any>;
 }
 
+export interface PageData {
+  basePath: string;
+  routePath: string;
+  filePath: string;
+  meta?: Record<string, any>;
+}
+
 export interface PagesConfigItem {
   /**
    * base route path
@@ -59,21 +66,24 @@ export interface UserConfig {
    * Defines files/paths to be ignored.
    */
   ignore?: string | string[];
-  onCreatePage?: (
-    page: Page
-  ) => Page | null | undefined | Promise<Page | null | undefined>;
-  onCreatePages?: (
-    pages: Page[]
-  ) => Page[] | null | undefined | Promise<Page[] | null | undefined>;
-  onCreateRoute?: (
-    route: Route
-  ) => Route | null | undefined | Promise<Route | null | undefined>;
+  onCreatePage?: (page: Page) => Page | void | Promise<Page | void>;
+  onCreatePages?: (pages: Page[]) => Page[] | void | Promise<Page[] | void>;
+  onCreateRoute?: (route: Route) => Route | void | Promise<Route | void>;
   onCreateRoutes?: (
     routes: Route[]
-  ) => Route[] | null | undefined | Promise<Route[] | null | undefined>;
+  ) => Route[] | void | Promise<Route[] | void>;
   onGenerateRoutesCode?: (
     code: string
-  ) => string | null | undefined | Promise<string | null | undefined>;
+  ) => string | void | Promise<string | void>;
+  onCreatePageData?: (
+    pageData: PageData
+  ) => PageData | void | Promise<PageData | void>;
+  onCreatePagesData?: (
+    pagesData: Record<string, PageData>
+  ) =>
+    | Record<string, PageData>
+    | void
+    | Promise<Record<string, PageData> | void>;
 }
 
 export interface ResolvedConfig extends Omit<UserConfig, 'pages'> {

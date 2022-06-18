@@ -16,7 +16,7 @@ import {
   normalizeRoutePath,
   toArray,
 } from './utils';
-import { Page, ResolvedConfig, Route } from './types';
+import { Page, PageData, ResolvedConfig, Route } from './types';
 import {
   PAGE_EXTS,
   RESOLVED_PAGES_DATA_MODULE_ID,
@@ -399,18 +399,20 @@ export default routes;
   }
 
   async generatePagesDataCode() {
-    const pagesData = (await this.getPages()).reduce<Record<string, Page>>(
-      (res, page) => {
-        // skip layout file and 404 file
-        if (page.isLayout || page.is404) {
-          return res;
-        }
+    const pages = await this.getPages();
+    let pagesData: Record<string, PageData> = {};
 
-        res[page.routePath] = page;
-        return res;
-      },
-      {}
+    await Promise.all(
+      pages
+        // skip layout file and 404 file
+        .filter(page => !page.isLayout && !page.is404)
+        .map(async page => {
+          pagesData[page.routePath] =
+            (await this.config.onCreatePageData?.(page)) || page;
+        })
     );
+
+    pagesData = (await this.config.onCreatePagesData?.(pagesData)) || pagesData;
 
     return `export const pagesData = ${JSON.stringify(pagesData, null, 2)};
 export default pagesData;
