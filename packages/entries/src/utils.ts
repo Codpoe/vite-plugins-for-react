@@ -9,7 +9,7 @@ export function normalizeRoutePath(routePath: string) {
  * @example /a/b/c -> a~b~c
  */
 export function flattenPath(p: string): string {
-  return p.replace(/^\//, '').replaceAll('/', '~');
+  return p.replace(/^\//, '').replace(/\//g, '~');
 }
 
 export function cleanUrl(url: string): string {
