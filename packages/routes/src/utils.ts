@@ -65,7 +65,7 @@ export function extractMetaExport(fileContent: string): {
         // remove trailing comma
         .replace(/,\s*(]|})/g, '$1')
         // ' -> "
-        .replaceAll(`'`, `"`)
+        .replace(/'/g, `"`)
         // put double quotes on the object's key
         .replace(/[{|\s](\w*?):/g, (m, p1: string) => m.replace(p1, `"${p1}"`))
     );
