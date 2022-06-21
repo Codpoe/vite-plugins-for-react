@@ -3,7 +3,7 @@ import path from 'upath';
 import fs from 'fs-extra';
 import fg from 'fast-glob';
 import mm from 'micromatch';
-import { Entry, UserConfig } from './types';
+import { Entry, UserConfig, UserEntryConfigItem } from './types';
 import { flattenPath, normalizeRoutePath, toArray } from './utils';
 import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
 import {
@@ -25,35 +25,64 @@ function getHtmlOutDir(root: string) {
   return path.resolve(nodeModulesDir, '.conventional-entries');
 }
 
+function resolveUserEntries(
+  root: string,
+  userEntries: UserConfig['entries'] = 'src'
+): Required<UserEntryConfigItem>[] {
+  return toArray(userEntries).map(userEntry => {
+    const userEntryObj =
+      typeof userEntry === 'string' ? { dir: userEntry } : userEntry;
+    return {
+      basePath: userEntryObj.basePath || '/',
+      dir: path.resolve(root, userEntryObj.dir),
+      pattern: userEntryObj.pattern || '**/main.{js,jsx,ts,tsx}',
+      ignore: userEntryObj.ignore || [],
+    };
+  });
+}
+
 function resolveEntries(
   root: string,
-  src: string,
-  pattern: string | string[],
-  basePath: string
+  userEntries: Required<UserEntryConfigItem>[]
 ): Entry[] {
   const htmlOutDir = getHtmlOutDir(root);
 
-  return fg
-    .sync(pattern, { cwd: src, absolute: true })
-    .sort((a, b) => b.length - a.length)
-    .map<Entry>(entryPath => {
-      const routePath = normalizeRoutePath(
-        basePath + '/' + path.relative(src, path.dirname(entryPath))
-      );
-      const serverPath = normalizeRoutePath(path.relative(root, entryPath));
-      // will create symlink for html path later
-      const htmlPath = path.resolve(
-        htmlOutDir,
-        `${flattenPath(routePath.slice(basePath.length)) || 'index'}.html`
-      );
+  userEntries = toArray(userEntries);
 
-      return {
-        entryPath,
-        routePath,
-        serverPath,
-        htmlPath,
-      };
-    });
+  return userEntries.flatMap(userEntry => {
+    const {
+      basePath = '/',
+      dir,
+      pattern = '**/main.{js,jsx,ts,tsx}',
+      ignore = [],
+    } = typeof userEntry === 'string' ? { dir: userEntry } : userEntry;
+
+    return fg
+      .sync(pattern || '**/main.{js,jsx,ts,tsx}', {
+        cwd: dir,
+        ignore: toArray(ignore),
+        absolute: true,
+      })
+      .sort((a, b) => b.length - a.length)
+      .map<Entry>(entryPath => {
+        const routePath = normalizeRoutePath(
+          basePath + '/' + path.relative(dir, path.dirname(entryPath))
+        );
+        const serverPath = normalizeRoutePath(path.relative(root, entryPath));
+        // will create link for html path later
+        const htmlPath = path.resolve(
+          htmlOutDir,
+          `${flattenPath(routePath.slice(basePath.length)) || 'index'}.html`
+        );
+
+        return {
+          entryPath,
+          routePath,
+          serverPath,
+          htmlPath,
+        };
+      });
+  });
 }
 
 function resolveInput(
@@ -104,15 +133,25 @@ function ensureLinkHtmlPath(root: string, entry: Entry) {
   }
 }
 
+function isMatchEntry(
+  userEntries: Required<UserEntryConfigItem>[],
+  filePath: string
+): boolean {
+  return userEntries.some(({ dir, pattern, ignore }) => {
+    return (
+      filePath.startsWith(dir) &&
+      mm.isMatch(filePath, pattern, { cwd: dir, ignore })
+    );
+  });
+}
+
 export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
   const {
-    pattern = '**/main.{js,jsx,ts,tsx}',
-    basePath = '/',
     prettifyHtml: userPrettifyHtml = false,
     minifyHtml: userMinifyHtml = true,
   } = userConfig;
 
-  let src: string;
+  let userEntries: Required<UserEntryConfigItem>[];
   let entries: Entry[];
 
   return [
@@ -126,10 +165,8 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
             : process.cwd()
         );
 
-        src = path.resolve(root, userConfig?.src || 'src');
-        entries = resolveEntries(root, src, pattern, basePath);
-
-        const srcFromRoot = path.relative(root, src);
+        userEntries = resolveUserEntries(root, userConfig.entries);
+        entries = resolveEntries(root, userEntries);
 
         return {
           // Since html may dynamically append the page entry after starting the server,
@@ -137,7 +174,9 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
           // We need to manually write the entries here,
           // so that vite can perform dependency crawling and optimization
           optimizeDeps: {
-            entries: toArray(pattern).map(p => `${srcFromRoot}/${p}`),
+            entries: userEntries.flatMap(({ dir, pattern }) =>
+              toArray(pattern).map(p => `${path.relative(root, dir)}/${p}`)
+            ),
             include: ['react', 'react-dom/client'],
           },
           build: {
@@ -154,7 +193,7 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
       },
       configureServer(server) {
         function listener(filePath: string) {
-          if (!mm.isMatch(filePath, pattern, { cwd: src })) {
+          if (!isMatchEntry(userEntries, filePath)) {
             return;
           }
 
