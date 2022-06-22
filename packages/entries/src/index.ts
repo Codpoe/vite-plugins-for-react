@@ -5,7 +5,11 @@ import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig, UserEntryConfigItem } from './types';
 import { flattenPath, normalizeRoutePath, toArray } from './utils';
-import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
+import {
+  DEFAULT_ENTRY_MODULE_ID,
+  DEFAULT_HTML_PATH,
+  RESOLVED_DEFAULT_ENTRY_MODULE_ID,
+} from './constants';
 import {
   minifyHtml,
   prettifyHtml,
@@ -14,6 +18,8 @@ import {
 } from './html';
 
 export * from './types';
+
+export { DEFAULT_ENTRY_MODULE_ID, RESOLVED_DEFAULT_ENTRY_MODULE_ID };
 
 function getHtmlOutDir(root: string) {
   const nodeModulesDir = path.resolve(root, 'node_modules');
@@ -237,11 +243,14 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
       },
       resolveId(source) {
         if (source.startsWith(DEFAULT_ENTRY_MODULE_ID)) {
-          return source;
+          return source.replace(
+            DEFAULT_ENTRY_MODULE_ID,
+            RESOLVED_DEFAULT_ENTRY_MODULE_ID
+          );
         }
       },
       async load(id) {
-        if (id.startsWith(DEFAULT_ENTRY_MODULE_ID)) {
+        if (id.startsWith(RESOLVED_DEFAULT_ENTRY_MODULE_ID)) {
           const query = new URLSearchParams(id.split('?')[1]);
           const routePath = normalizeRoutePath(query.get('routePath') || '/');
           const entry = entries.find(entry => entry.routePath === routePath);

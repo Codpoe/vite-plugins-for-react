@@ -214,11 +214,11 @@ function getEntryClientPath(entry: Entry): string {
     );
 
     if (fs.existsSync(entryClientPath)) {
-      return entryClientPath;
+      return `/@fs/${entryClientPath}`;
     }
   }
 
-  return `${DEFAULT_ENTRY_MODULE_ID}?routePath=${entry.routePath}`;
+  return `/@id/${DEFAULT_ENTRY_MODULE_ID}?routePath=${entry.routePath}`;
 }
 
 function injectEntryScript(html: string, entry: Entry): string {
@@ -230,7 +230,7 @@ function injectEntryScript(html: string, entry: Entry): string {
   return injectHtml(
     html,
     'body',
-    `<script type="module" src="/@fs/${getEntryClientPath(entry)}"></script>`
+    `<script type="module" src="${getEntryClientPath(entry)}"></script>`
   );
 }
 
