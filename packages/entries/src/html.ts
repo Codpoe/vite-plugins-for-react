@@ -218,7 +218,7 @@ function getEntryClientPath(entry: Entry): string {
     }
   }
 
-  return `/@id/${DEFAULT_ENTRY_MODULE_ID}?routePath=${entry.routePath}`;
+  return `${DEFAULT_ENTRY_MODULE_ID}?routePath=${entry.routePath}`;
 }
 
 function injectEntryScript(html: string, entry: Entry): string {
