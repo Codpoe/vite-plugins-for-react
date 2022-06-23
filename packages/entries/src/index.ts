@@ -288,10 +288,9 @@ if (rootEl) {
             // for example: 'dist/node_modules/.conventional-entries/index.html'.
             // In order to have a clearer directory structure, we should rewrite html fileName here.
             // see also: https://github.com/vitejs/vite/blob/1878f465d26d1c61a29ede72882d54d7e95c1042/packages/vite/src/node/plugins/html.ts#L672
-            chunk.fileName = chunk.fileName.replace(
-              'node_modules/.conventional-entries/',
-              ''
-            );
+            chunk.fileName = path
+              .normalize(chunk.fileName)
+              .replace('node_modules/.conventional-entries/', '');
 
             if (userPrettifyHtml) {
               chunk.source = prettifyHtml(chunk.source, userPrettifyHtml);

@@ -3,7 +3,9 @@ import { extract, parse } from 'jest-docblock';
 import matter from 'gray-matter';
 
 export function normalizeRoutePath(routePath: string) {
-  return path.normalize('/' + routePath.replace(/\/+$/, ''));
+  return path.normalize(
+    '/' + routePath.replace(/^\/+/, '').replace(/\/+$/, '')
+  );
 }
 
 /**
