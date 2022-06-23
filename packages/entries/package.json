@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-conventional-entries",
-  "version": "0.1.10-beta.6",
+  "version": "0.1.10-beta.7",
   "description": "vite plugin to generate conventional entries",
   "keywords": [
     "vite",
