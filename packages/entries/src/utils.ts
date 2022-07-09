@@ -1,7 +1,9 @@
 import path from 'upath';
 
 export function normalizeRoutePath(routePath: string) {
-  return path.normalize('/' + routePath.replace(/\/+$/, ''));
+  return path.normalize(
+    '/' + routePath.replace(/^\/+/, '').replace(/\/+$/, '')
+  );
 }
 
 /**
