@@ -57,7 +57,7 @@ function resolveRoutePath(basePath: string, relFilePath: string) {
     .replace(/^(\/index){2}$/, '') // remove '/index/index'
     .replace(/\/index$/, '') // remove '/index'
     .replace(/\/README$/i, '') // remove '/README'
-    .replace(/\/_layout$/, '') // remove '/_layout'
+    .replace(/\/_?layout$/, '') // remove '/_layout' and '/layout'
     .replace(/\/404$/, '/*') // transform '/404' to '/*' so this route acts like a catch-all for URLs that we don't have explicit routes for
     .replace(/\/\[\.{3}.*?\]$/, '/*') // transform '/post/[...all]' to '/post/*'
     .replace(/\/\[(.*?)\]/g, '/:$1'); // transform 'user/[id]' to 'user/:id'
@@ -68,7 +68,8 @@ function resolveRoutePath(basePath: string, relFilePath: string) {
 }
 
 function isLayoutFile(filePath: string) {
-  return path.basename(filePath, path.extname(filePath)) === '_layout';
+  const name = path.basename(filePath, path.extname(filePath));
+  return name === '_layout' || name === 'layout';
 }
 
 function is404File(filePath: string) {
@@ -92,7 +93,10 @@ export class PagesService extends EventEmitter {
     return (this._startPromise = Promise.all(
       this.config.pages.config.map(
         async ({ basePath, dir, pattern, ignore }) => {
-          pattern = ['**/_layout.{js,jsx,ts,tsx,md,mdx}', ...toArray(pattern)];
+          pattern = [
+            '**/{_layout,layout}.{js,jsx,ts,tsx,md,mdx}',
+            ...toArray(pattern),
+          ];
           ignore = toArray(ignore);
 
           const relFilePaths = fg.sync(pattern, { cwd: dir, ignore });
