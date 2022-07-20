@@ -63,12 +63,6 @@ export function resolvePagesConfig(
     type = 'custom';
   }
 
-  if (!pages) {
-    throw new Error(
-      'The pages config cannot be resolved, probably because the src directory does not conform to the convention'
-    );
-  }
-
   const pagesConfig: PagesConfig = toArray(pages).map(item => {
     if (typeof item === 'string') {
       item = {
