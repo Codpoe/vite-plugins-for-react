@@ -30,9 +30,7 @@ function resolveRewrites(server: ViteDevServer, entries: Entry[]): Rewrite[] {
         // priority use of index.html in the entry
         if (fs.existsSync(entry.htmlPath)) {
           return normalizeRoutePath(
-            server.config.base +
-              '/' +
-              path.relative(server.config.root, entry.htmlPath)
+            '/' + path.relative(server.config.root, entry.htmlPath)
           );
         }
         return `/index.html`;
@@ -66,11 +64,7 @@ export function spaFallbackMiddleware(
 
   return function viteSpaFallbackMiddleware(req, res, next) {
     // The path of virtual module usually starts with @, we shouldn't rewrite it
-    if (
-      !req.url ||
-      req.url.startsWith('/@') ||
-      req.url.startsWith(server.config.base + '@')
-    ) {
+    if (!req.url || req.url.startsWith('/@')) {
       return next();
     }
 
@@ -85,6 +79,9 @@ export function spaFallbackMiddleware(
     if (ext && ext !== '.html') {
       return next();
     }
+
+    // use originalUrl for custom history fallback
+    req.url = req.originalUrl;
 
     return historyMiddleware(req, res, next);
   };
