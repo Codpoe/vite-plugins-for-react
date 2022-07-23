@@ -5,7 +5,12 @@ import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig, UserEntryConfigItem } from './types';
 import { flattenPath, normalizeRoutePath, toArray } from './utils';
-import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
+import {
+  DEFAULT_ENTRY_MODULE_ID,
+  DEFAULT_HTML_PATH,
+  ENTRIES_MODULE_ID,
+  RESOLVED_ENTRIES_MODULE_ID,
+} from './constants';
 import {
   minifyHtml,
   prettifyHtml,
@@ -15,7 +20,11 @@ import {
 
 export * from './types';
 
-export { DEFAULT_ENTRY_MODULE_ID };
+export {
+  DEFAULT_ENTRY_MODULE_ID,
+  ENTRIES_MODULE_ID,
+  RESOLVED_ENTRIES_MODULE_ID,
+};
 
 function getHtmlOutDir(root: string) {
   const nodeModulesDir = path.resolve(root, 'node_modules');
@@ -181,7 +190,12 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
             entries: userEntries.flatMap(({ dir, pattern }) =>
               toArray(pattern).map(p => `${path.relative(root, dir)}/${p}`)
             ),
-            include: ['react', 'react-dom/client'],
+            include: [
+              'react',
+              'react/jsx-runtime',
+              'react/jsx-dev-runtime',
+              'react-dom/client',
+            ],
           },
           build: {
             rollupOptions: {
@@ -298,6 +312,21 @@ if (rootEl) {
               chunk.source = await minifyHtml(chunk.source, userMinifyHtml);
             }
           }
+        }
+      },
+    },
+    {
+      name: 'vite-plugin-conventional-entries:expose-entries',
+      resolveId(source) {
+        if (source === ENTRIES_MODULE_ID) {
+          return RESOLVED_ENTRIES_MODULE_ID;
+        }
+      },
+      load(id) {
+        if (id === RESOLVED_ENTRIES_MODULE_ID) {
+          return `export const entries = ${JSON.stringify(entries, null, 2)};
+export default entries;
+`;
         }
       },
     },
