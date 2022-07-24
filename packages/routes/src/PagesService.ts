@@ -54,6 +54,7 @@ export function resolvePageMeta(
 function resolveRoutePath(basePath: string, relFilePath: string) {
   let routePath = path
     .trimExt(normalizeRoutePath(relFilePath)) // remove ext
+    .replace(/\/page$/, '') // remove '/page'
     .replace(/^(\/index){2}$/, '') // remove '/index/index'
     .replace(/\/index$/, '') // remove '/index'
     .replace(/\/README$/i, '') // remove '/README'
