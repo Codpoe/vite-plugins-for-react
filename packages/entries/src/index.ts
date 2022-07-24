@@ -5,7 +5,12 @@ import fg from 'fast-glob';
 import mm from 'micromatch';
 import { Entry, UserConfig, UserEntryConfigItem } from './types';
 import { flattenPath, normalizeRoutePath, toArray } from './utils';
-import { DEFAULT_ENTRY_MODULE_ID, DEFAULT_HTML_PATH } from './constants';
+import {
+  DEFAULT_ENTRY_MODULE_ID,
+  DEFAULT_HTML_PATH,
+  ENTRIES_MODULE_ID,
+  RESOLVED_ENTRIES_MODULE_ID,
+} from './constants';
 import {
   minifyHtml,
   prettifyHtml,
@@ -15,7 +20,11 @@ import {
 
 export * from './types';
 
-export { DEFAULT_ENTRY_MODULE_ID };
+export {
+  DEFAULT_ENTRY_MODULE_ID,
+  ENTRIES_MODULE_ID,
+  RESOLVED_ENTRIES_MODULE_ID,
+};
 
 function getHtmlOutDir(root: string) {
   const nodeModulesDir = path.resolve(root, 'node_modules');
@@ -74,7 +83,8 @@ function resolveEntries(
         // will create link for html path later
         const htmlPath = path.resolve(
           htmlOutDir,
-          `${flattenPath(routePath.slice(basePath.length)) || 'index'}.html`
+          routePath.slice(basePath.length).replace(/^\/+/, ''),
+          'index.html'
         );
 
         return {
@@ -104,8 +114,8 @@ function resolveInput(
    *
    * MPA:
    * {
-   *   'entry~a': 'node_modules/.conventional-entries/a.html',
-   *   'entry~b~c': 'node_modules/.conventional-entries/b/c.html'
+   *   'entry~a': 'node_modules/.conventional-entries/a/index.html',
+   *   'entry~b~c': 'node_modules/.conventional-entries/b/c/index.html'
    * }
    */
   const input = entries.reduce<Record<string, string>>((res, entry) => {
@@ -171,6 +181,7 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
         entries = resolveEntries(root, userEntries);
 
         return {
+          appType: entries.length > 1 ? 'mpa' : 'spa',
           // Since html may dynamically append the page entry after starting the server,
           // we cannot rely on vite's default optimization strategy.
           // We need to manually write the entries here,
@@ -179,7 +190,12 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
             entries: userEntries.flatMap(({ dir, pattern }) =>
               toArray(pattern).map(p => `${path.relative(root, dir)}/${p}`)
             ),
-            include: ['react', 'react-dom/client'],
+            include: [
+              'react',
+              'react/jsx-runtime',
+              'react/jsx-dev-runtime',
+              'react-dom/client',
+            ],
           },
           build: {
             rollupOptions: {
@@ -221,11 +237,9 @@ export function conventionalEntries(userConfig: UserConfig = {}): Plugin[] {
           .on('change', listener)
           .on('unlink', listener);
 
-        server.middlewares.use(spaFallbackMiddleware(server, entries));
-
-        // return () => {
-        //   server.middlewares.use(htmlMiddleware(server));
-        // };
+        return () => {
+          server.middlewares.use(spaFallbackMiddleware(server, entries));
+        };
       },
       transformIndexHtml: {
         enforce: 'pre',
@@ -298,6 +312,21 @@ if (rootEl) {
               chunk.source = await minifyHtml(chunk.source, userMinifyHtml);
             }
           }
+        }
+      },
+    },
+    {
+      name: 'vite-plugin-conventional-entries:expose-entries',
+      resolveId(source) {
+        if (source === ENTRIES_MODULE_ID) {
+          return RESOLVED_ENTRIES_MODULE_ID;
+        }
+      },
+      load(id) {
+        if (id === RESOLVED_ENTRIES_MODULE_ID) {
+          return `export const entries = ${JSON.stringify(entries, null, 2)};
+export default entries;
+`;
         }
       },
     },

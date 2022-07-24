@@ -11,7 +11,7 @@ function RoutesRenderer() {
 export default function App() {
   return (
     <React.StrictMode>
-      <BrowserRouter>
+      <BrowserRouter basename="/base">
         <appContext.Provider value={{ routes }}>
           <RoutesRenderer />
         </appContext.Provider>

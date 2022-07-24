@@ -5,9 +5,10 @@ import conventionalRoutes from 'vite-plugin-conventional-routes';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/base/',
   plugins: [
     react(),
-    conventionalEntries({ basePath: '/base' }),
+    conventionalEntries({ entries: { basePath: '/base', dir: 'src' } }),
     conventionalRoutes(),
   ],
 });
